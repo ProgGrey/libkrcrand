@@ -62,6 +62,11 @@ public:
     virtual void seed(uint64_t s) override final;
     // Return pointer to internal state
     virtual const uint64_t* raw(void) override final;
+    Xoshiro256mmState(uint64_t val)
+    {
+        seed(val);
+    }
+    Xoshiro256mmState(){}
 private:
     void next_state(uint64_t buf[State_Size]);
     uint64_t state[State_Size];
@@ -76,6 +81,11 @@ private:
     uint64_t gen(void);
 public:
     virtual Xoshiro256mmState set_state(Xoshiro256mmState &state) override final;
+    Xoshiro256mmUniversal(){}
+    Xoshiro256mmUniversal(Xoshiro256mmState &state)
+    {
+        set_state(state);
+    }
 };
 
 #ifdef LIBKRCRAND_ENABLE_SSE2
@@ -88,6 +98,11 @@ private:
     __m128i gen(void);
 public:
     virtual Xoshiro256mmState set_state(Xoshiro256mmState &state) override final;
+    Xoshiro256mmSSE2(){}
+    Xoshiro256mmSSE2(Xoshiro256mmState &state)
+    {
+        set_state(state);
+    }
 };
 #endif
 

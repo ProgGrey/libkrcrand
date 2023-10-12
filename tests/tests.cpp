@@ -9,6 +9,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace krcrand;
 
 
 BOOST_AUTO_TEST_CASE(Xoshiro256mm)
@@ -27,4 +28,15 @@ BOOST_AUTO_TEST_CASE(Xoshiro256mm)
     for(unsigned int k = 0; k < tmp.State_Size; k++){
         BOOST_CHECK(tmp.raw()[k] == st2[k]);
     }
+    Xoshiro256mmUniversal gen_u1;
+    Xoshiro256mmUniversal gen_u2;
+    Xoshiro256mmSSE2 gen_sse1;
+    auto state_u = gen_u1.set_state(st);
+    state_u = gen_u2.set_state(state_u);
+    gen_sse1.set_state(st);
+    for(unsigned int k = 0; k < Generator_Buff_Size*8; k++){
+        BOOST_CHECK(gen_u1() == gen_sse1());
+        BOOST_CHECK(gen_u2() == gen_sse1());
+    }
+    cout << endl;
 }

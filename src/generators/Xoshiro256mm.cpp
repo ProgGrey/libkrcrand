@@ -97,19 +97,43 @@ Xoshiro256mmState Xoshiro256mmSSE2::set_state(Xoshiro256mmState &state)
 	for(unsigned int k = 0; k < state.State_Size; k++){
 		buf[0] = s1[k];
 		buf[1] = s2[k];
-		memcpy(&s1[k], buf, sizeof(uint64_t)*2);
+		memcpy(&(this->state[k]), buf, sizeof(uint64_t)*2);
 	}
     return tmp.jump();
 }
 
 __m128i Xoshiro256mmSSE2::gen(void)
 {
-	__m128i value = rotl_SSE2(state[1], 7);
+	//__m128i value = rotl_sse2(mull_u64_sse2(state[1], _mm_set1_epi64x(5)), 7);
+	//value = mull_u64_sse2(value, _mm_set1_epi64x(9));
+	__m128i value = _mm_add_epi64(state[1], _mm_slli_epi64(state[1], 2));//Equals multiplying by 5
+	value = rotl_sse2(value, 7);
+	value = _mm_add_epi64(value, _mm_slli_epi64(value, 3));//Equals multiplying by 9
+	__m128i tmp = _mm_slli_epi64(state[1], 17);
+	
+	state[2] = _mm_xor_si128(state[2], state[0]);
+	state[3] = _mm_xor_si128(state[3], state[1]);
+	state[1] = _mm_xor_si128(state[1], state[2]);
+	state[0] = _mm_xor_si128(state[0], state[3]);
+
+	state[2] = _mm_xor_si128(state[2], tmp);
+
+	state[3] = rotl_sse2(state[3], 45);
+	return value;
 }
 
 void Xoshiro256mmSSE2::fill(void)
 {
-	
+	for(unsigned int k = 0; k < Generator_Buff_Size; k+=2){
+		__m128i tmp = gen();
+		memcpy(buffer + k, &tmp, sizeof(uint64_t)*2);
+	}
+	/*
+	if(Generator_Buff_Size & 1){
+		__m128i tmp = gen();
+		memcpy(buffer + Generator_Buff_Size - 1, &tmp, sizeof(uint64_t));
+	}
+	//*/
 }
 
 #endif

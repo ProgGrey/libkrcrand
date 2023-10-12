@@ -1,5 +1,10 @@
-CXX=g++
-CXXFLAGS=-std=c++17 -O2 -flto -Wall -Wextra -Wpedantic
+CXX=g++-13
+CXXFLAGS=-std=c++17 -O3  -flto -Wall -Wextra -Wpedantic
+
+all:test speed
+
+speed:libkrcrand.a tests/speed.cpp
+	$(CXX) ${CXXFLAGS} tests/speed.cpp libkrcrand.a -o speed
 
 test:libkrcrand.a tests.o
 	$(CXX) ${CXXFLAGS} tests.o libkrcrand.a -lboost_unit_test_framework -o test
@@ -20,4 +25,4 @@ check:
 	cppcheck --enable=all ./src/* ./headers/* ./tests/*
 
 clean:
-	rm *.o *.a test
+	rm *.o *.a test speed

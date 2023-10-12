@@ -2,3 +2,5 @@
 *.a
 test
 .vscode
+tests/mull
+speed
