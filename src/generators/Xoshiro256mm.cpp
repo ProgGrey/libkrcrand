@@ -2,6 +2,8 @@
 #include "../../headers/generators.hpp"
 #include <cstring>
 
+using namespace krcrand;
+
 void Xoshiro256mmState::seed(uint64_t s)
 {
     split_mix64_fill(s, state, 4);
@@ -81,3 +83,33 @@ uint64_t Xoshiro256mmUniversal::gen(void)
 
 	return value;
 }
+
+#ifdef LIBKRCRAND_ENABLE_SSE2
+
+Xoshiro256mmState Xoshiro256mmSSE2::set_state(Xoshiro256mmState &state)
+{
+	uint64_t s1[state.State_Size];
+	uint64_t s2[state.State_Size];
+	uint64_t buf[2];
+    memcpy(s1, state.raw(), sizeof(uint64_t)*state.State_Size);
+	auto tmp = state.jump();
+	memcpy(s2, tmp.raw(), sizeof(uint64_t)*tmp.State_Size);
+	for(unsigned int k = 0; k < state.State_Size; k++){
+		buf[0] = s1[k];
+		buf[1] = s2[k];
+		memcpy(&s1[k], buf, sizeof(uint64_t)*2);
+	}
+    return tmp.jump();
+}
+
+__m128i Xoshiro256mmSSE2::gen(void)
+{
+	__m128i value = rotl_SSE2(state[1], 7);
+}
+
+void Xoshiro256mmSSE2::fill(void)
+{
+	
+}
+
+#endif

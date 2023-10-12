@@ -3,6 +3,13 @@
 
 #include <cstdint>
 #include "constants.hpp"
+#include "platform.hpp"
+
+#ifdef LIBKRCRAND_ENABLE_SSE2
+#include <emmintrin.h>
+#endif
+
+namespace krcrand{
 
 class InternalState
 {
@@ -71,4 +78,18 @@ public:
     virtual Xoshiro256mmState set_state(Xoshiro256mmState &state) override final;
 };
 
+#ifdef LIBKRCRAND_ENABLE_SSE2
+// Xoshiro256** SSE2 version
+class Xoshiro256mmSSE2 : public Generator<Xoshiro256mmState>
+{
+private:
+    __m128i  state[Xoshiro256mmState::State_Size];
+    virtual void fill(void) override final;
+    __m128i gen(void);
+public:
+    virtual Xoshiro256mmState set_state(Xoshiro256mmState &state) override final;
+};
+#endif
+
+}
 #endif
