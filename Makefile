@@ -1,4 +1,4 @@
-CXX=g++
+CXX=clang++
 CXXFLAGS=-std=c++17 -O3 -march=x86-64-v4  -flto -Wall -Wextra -Wpedantic
 
 all:test speed

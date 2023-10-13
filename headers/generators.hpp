@@ -95,6 +95,8 @@ public:
     }
 };
 
+#include <iostream>
+
 class Xoshiro256mmUniversalStable: public Generator<Xoshiro256mmState>
 {
     private:
@@ -102,10 +104,15 @@ class Xoshiro256mmUniversalStable: public Generator<Xoshiro256mmState>
     Xoshiro256mmUniversal gens[COMPAB_COUNT_UNIV];
     virtual void fill(void) override final
     {
-        for(unsigned int k = 0; k < COMPAB_COUNT_UNIV; k++){
-            for(unsigned int j = 0; j < Generator_Buff_Size/COMPAB_COUNT_UNIV; j++){
-                buffer[k*COMPAB_COUNT_UNIV + j] = gens[k]();
+        uint_fast8_t gnum = 0;
+        for(unsigned int k = 0; k < Generator_Buff_Size; k++){
+            buffer[k] = gens[gnum]();
+            std::cout << gnum << '\t';
+            gnum++;
+            if(gnum >= COMPAB_COUNT_UNIV){
+                gnum = 0;
             }
+            //buffer[k] = 0;
         }
     }
     public:
@@ -158,11 +165,26 @@ class Xoshiro256mmSSE2stable: public Generator<Xoshiro256mmState>
     Xoshiro256mmSSE2 gens[COMPAB_COUNT_SSE2];
     virtual void fill(void) override final
     {
-        for(unsigned int k = 0; k < COMPAB_COUNT_SSE2; k++){
-            for(unsigned int j = 0; j < Generator_Buff_Size/COMPAB_COUNT_SSE2; j++){
-                buffer[k*COMPAB_COUNT_SSE2 + j] = gens[k]();
+        uint_fast8_t gnum = 0;
+        for(unsigned int k = 0; k < Generator_Buff_Size; k+=2){
+            buffer[k] = gens[gnum]();
+            buffer[k+1] = gens[gnum]();
+            gnum++;
+            if(gnum >= COMPAB_COUNT_SSE2){
+                gnum = 0;
+            }
+            //buffer[k] = 0;
+        }
+        /*
+        const uint64_t step_counts = Generator_Buff_Size/COMPAB_COUNT_SSE2/2;
+        for(unsigned int j = 0; j < step_counts; j++){
+            for(unsigned int k = 0; k < COMPAB_COUNT_SSE2; k++){
+                for(unsigned int i = 0; i < 2; i++){
+                    buffer[j*COMPAB_COUNT_SSE2 + k*2 + i] = gens[k]();
+                }
             }
         }
+        //*/
     }
     public:
     __m128i gen(void)
