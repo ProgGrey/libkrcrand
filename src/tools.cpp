@@ -34,7 +34,7 @@ __m128i rotl_sse2(const __m128i x, uint_fast8_t k)
 
 __m128i mull_u64_sse2(const __m128i &a, const __m128i &b)
 {
-    #ifdef LIBKRCRAND_ENABLE_SSE41
+    /*
     __m128i a1 = a;
     __m128i b1 = b;
     __m128i t1 = _mm_mul_epu32(a1, b1);
@@ -42,9 +42,8 @@ __m128i mull_u64_sse2(const __m128i &a, const __m128i &b)
     __m128i t2 = _mm_hadd_epi32(m23, _mm_set1_epi64x(0));
     t2 = _mm_shuffle_epi32(t2, 0b01110010);
     return _mm_add_epi64(t1, t2);
+    //*/
     
-    
-    #else
     // It's faster that direct solution via 3 multiplication
     uint64_t ab[2];
     uint64_t bb[2];
@@ -56,7 +55,7 @@ __m128i mull_u64_sse2(const __m128i &a, const __m128i &b)
     memcpy(&res, ab, sizeof(uint64_t)*2);
     return res;
 
-    #endif
+
     /*
     //__m128i a1 = _mm_and_si128(a, _mm_set1_epi64x(0xFFFFFFFF));
     //__m128i b1 = _mm_and_si128(b, _mm_set1_epi64x(0xFFFFFFFF));
@@ -69,5 +68,23 @@ __m128i mull_u64_sse2(const __m128i &a, const __m128i &b)
     __m128i t3 = _mm_slli_epi64(_mm_mul_epu32(a2, b1), 32);
     return _mm_add_epi64(_mm_add_epi64(t1, t2), t3);
     //*/
+}
+#endif
+
+#ifdef LIBKRCRAND_ENABLE_AVX2
+__m256i rotl_avx2(const __m256i x, uint_fast8_t k) 
+{
+    auto a = _mm256_slli_epi64(x, k);
+    auto b = _mm256_srli_epi64(x, 64 - k);
+	return _mm256_or_si256(a, b);
+}
+#endif
+
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+__m512i rotl_avx512f(const __m512i x, uint_fast8_t k) 
+{
+    auto a = _mm512_slli_epi64(x, k);
+    auto b = _mm512_srli_epi64(x, 64 - k);
+	return _mm512_or_si512(a, b);
 }
 #endif

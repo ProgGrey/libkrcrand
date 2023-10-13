@@ -13,5 +13,17 @@ __m128i rotl_sse2(const __m128i x, uint_fast8_t k) ;
 __m128i mull_u64_sse2(const __m128i &a, const __m128i &b);
 #endif
 
+
+#ifdef LIBKRCRAND_ENABLE_AVX2
+#include <immintrin.h>
+__m256i rotl_avx2(const __m256i x, uint_fast8_t k);
+#endif
+
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+#include <immintrin.h>
+__m512i rotl_avx512f(const __m512i x, uint_fast8_t k);
+#endif
+
+
 #endif
 

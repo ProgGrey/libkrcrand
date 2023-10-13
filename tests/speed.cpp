@@ -13,8 +13,10 @@ int main()
     Xoshiro256mmState st(rd());
     Xoshiro256mmUniversal gen1(st);
     Xoshiro256mmSSE2 gen2(st);
+    Xoshiro256mmAVX2 gen3(st);
+    Xoshiro256mmAVX512F gen4(st);
     double res = 0;
-    uint64_t N = 10000000000;
+    uint64_t N = 1000000000;
     auto start = chrono::system_clock::now();
     for(uint64_t k = 0; k < N; k++){
         res += (double)gen0()/N;
@@ -36,5 +38,19 @@ int main()
     end = chrono::system_clock::now();
     diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
     cout << "Xoshiro256mmSSE2:" << diff.count() << "ms\t" << res << endl;
+    start = chrono::system_clock::now();
+    for(uint64_t k = 0; k < N; k++){
+        res += (double)gen3()/N;
+    }
+    end = chrono::system_clock::now();
+    diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    cout << "Xoshiro256mmAVX2:" << diff.count() << "ms\t" << res << endl;
+    start = chrono::system_clock::now();
+    for(uint64_t k = 0; k < N; k++){
+        res += (double)gen4()/N;
+    }
+    end = chrono::system_clock::now();
+    diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    cout << "Xoshiro256mmAVX512F:" << diff.count() << "ms\t" << res << endl;
     return 0;
 }

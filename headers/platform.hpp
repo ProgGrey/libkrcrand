@@ -2,6 +2,23 @@
 #define __LIBKRCRAND_PLATFORM_HPP__
 
 #define LIBKRCRAND_ENABLE_SSE2 true
-//#define LIBKRCRAND_ENABLE_SSE41 true
+#define LIBKRCRAND_ENABLE_AVX2 true
+#define LIBKRCRAND_ENABLE_AVX512F true
+
+
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+#define DECL_KRCRAND_ALIGN alignas(64)
+#elif defined(LIBKRCRAND_ENABLE_AVX2)
+#define DECL_KRCRAND_ALIGN alignas(32)
+#elif defined(LIBKRCRAND_ENABLE_SSE2)
+#define DECL_KRCRAND_ALIGN alignas(16)
+#else
+#define DECL_KRCRAND_ALIGN 
+#endif
+
+#define COMPAB_COUNT_UNIV 8
+#define COMPAB_COUNT_SSE2 4
+#define COMPAB_COUNT_AVX2 2
+#define COMPAB_COUNT_AVX512F 1
 
 #endif

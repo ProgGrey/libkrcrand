@@ -1,5 +1,5 @@
-CXX=g++-13
-CXXFLAGS=-std=c++17 -O3  -flto -Wall -Wextra -Wpedantic
+CXX=g++
+CXXFLAGS=-std=c++17 -O3 -march=x86-64-v4  -flto -Wall -Wextra -Wpedantic
 
 all:test speed
 
