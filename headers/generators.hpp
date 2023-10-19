@@ -14,6 +14,7 @@
 #include <immintrin.h>
 #endif
 
+#include <iostream>
 
 namespace krcrand{
 
@@ -95,8 +96,6 @@ public:
     }
 };
 
-#include <iostream>
-
 class Xoshiro256mmUniversalStable: public Generator<Xoshiro256mmState>
 {
     private:
@@ -107,7 +106,7 @@ class Xoshiro256mmUniversalStable: public Generator<Xoshiro256mmState>
         uint_fast8_t gnum = 0;
         for(unsigned int k = 0; k < Generator_Buff_Size; k++){
             buffer[k] = gens[gnum]();
-            std::cout << gnum << '\t';
+            //std::cout << (int)gnum << '\t';
             gnum++;
             if(gnum >= COMPAB_COUNT_UNIV){
                 gnum = 0;
@@ -146,7 +145,7 @@ class Xoshiro256mmUniversalStable: public Generator<Xoshiro256mmState>
 class Xoshiro256mmSSE2 : public Generator<Xoshiro256mmState>
 {
 private:
-    __m128i  state[Xoshiro256mmState::State_Size];
+    alignas(16) __m128i  state[Xoshiro256mmState::State_Size];
     virtual void fill(void) override final;
 public:
     __m128i gen(void);
@@ -167,24 +166,14 @@ class Xoshiro256mmSSE2stable: public Generator<Xoshiro256mmState>
     {
         uint_fast8_t gnum = 0;
         for(unsigned int k = 0; k < Generator_Buff_Size; k+=2){
-            buffer[k] = gens[gnum]();
-            buffer[k+1] = gens[gnum]();
+            for(unsigned int j = 0; j < 2; j++){
+                buffer[k+j] = gens[gnum]();
+            }
             gnum++;
             if(gnum >= COMPAB_COUNT_SSE2){
                 gnum = 0;
             }
-            //buffer[k] = 0;
         }
-        /*
-        const uint64_t step_counts = Generator_Buff_Size/COMPAB_COUNT_SSE2/2;
-        for(unsigned int j = 0; j < step_counts; j++){
-            for(unsigned int k = 0; k < COMPAB_COUNT_SSE2; k++){
-                for(unsigned int i = 0; i < 2; i++){
-                    buffer[j*COMPAB_COUNT_SSE2 + k*2 + i] = gens[k]();
-                }
-            }
-        }
-        //*/
     }
     public:
     __m128i gen(void)
@@ -200,8 +189,7 @@ class Xoshiro256mmSSE2stable: public Generator<Xoshiro256mmState>
     {
         Xoshiro256mmState st = state;
         for(unsigned int k = 0; k < COMPAB_COUNT_SSE2; k++){
-            gens[k].set_state(st);
-            st = st.jump();
+            st = gens[k].set_state(st);
         }
         return st;
     }
@@ -218,7 +206,7 @@ class Xoshiro256mmSSE2stable: public Generator<Xoshiro256mmState>
 class Xoshiro256mmAVX2 : public Generator<Xoshiro256mmState>
 {
 private:
-    __m256i  state[Xoshiro256mmState::State_Size];
+    alignas(32) __m256i  state[Xoshiro256mmState::State_Size];
     virtual void fill(void) override final;
 public:
     __m256i gen(void);
@@ -237,9 +225,14 @@ class Xoshiro256mmAVX2stable: public Generator<Xoshiro256mmState>
     Xoshiro256mmAVX2 gens[COMPAB_COUNT_AVX2];
     virtual void fill(void) override final
     {
-        for(unsigned int k = 0; k < COMPAB_COUNT_AVX2; k++){
-            for(unsigned int j = 0; j < Generator_Buff_Size/COMPAB_COUNT_AVX2; j++){
-                buffer[k*COMPAB_COUNT_AVX2 + j] = gens[k]();
+        uint_fast8_t gnum = 0;
+        for(unsigned int k = 0; k < Generator_Buff_Size; k+=4){
+            for(unsigned int j = 0; j < 4; j++){
+                buffer[k+j] = gens[gnum]();
+            }
+            gnum++;
+            if(gnum >= COMPAB_COUNT_AVX2){
+                gnum = 0;
             }
         }
     }
@@ -257,8 +250,7 @@ class Xoshiro256mmAVX2stable: public Generator<Xoshiro256mmState>
     {
         Xoshiro256mmState st = state;
         for(unsigned int k = 0; k < COMPAB_COUNT_AVX2; k++){
-            gens[k].set_state(st);
-            st = st.jump();
+            st = gens[k].set_state(st);
         }
         return st;
     }
@@ -275,7 +267,7 @@ class Xoshiro256mmAVX2stable: public Generator<Xoshiro256mmState>
 class Xoshiro256mmAVX512F: public Generator<Xoshiro256mmState>
 {
 private:
-    __m512i  state[Xoshiro256mmState::State_Size];
+    alignas(64) __m512i  state[Xoshiro256mmState::State_Size];
     virtual void fill(void) override final;
 public:
     __m512i gen(void);
@@ -297,9 +289,14 @@ class Xoshiro256mmAVX512Fstable: public Generator<Xoshiro256mmState>
     Xoshiro256mmAVX512F gens[COMPAB_COUNT_AVX512F];
     virtual void fill(void) override final
     {
-        for(unsigned int k = 0; k < COMPAB_COUNT_AVX512F; k++){
-            for(unsigned int j = 0; j < Generator_Buff_Size/COMPAB_COUNT_AVX512F; j++){
-                buffer[k*COMPAB_COUNT_AVX512F + j] = gens[k]();
+        uint_fast8_t gnum = 0;
+        for(unsigned int k = 0; k < Generator_Buff_Size; k+=8){
+            for(unsigned int j = 0; j < 8; j++){
+                buffer[k+j] = gens[gnum]();
+            }
+            gnum++;
+            if(gnum >= COMPAB_COUNT_AVX512F){
+                gnum = 0;
             }
         }
     }
@@ -317,8 +314,7 @@ class Xoshiro256mmAVX512Fstable: public Generator<Xoshiro256mmState>
     {
         Xoshiro256mmState st = state;
         for(unsigned int k = 0; k < COMPAB_COUNT_AVX512F; k++){
-            gens[k].set_state(st);
-            st = st.jump();
+            st = gens[k].set_state(st);
         }
         return st;
     }

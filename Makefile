@@ -1,5 +1,5 @@
-CXX=clang++
-CXXFLAGS=-std=c++17 -O3 -march=x86-64-v4  -flto -Wall -Wextra -Wpedantic
+CXX=g++
+CXXFLAGS=-std=c++17 -O2 -march=x86-64-v3  -flto -Wall -Wextra -Wpedantic
 
 all:test speed
 
@@ -9,7 +9,7 @@ speed:libkrcrand.a tests/speed.cpp
 test:libkrcrand.a tests.o
 	$(CXX) ${CXXFLAGS} tests.o libkrcrand.a -lboost_unit_test_framework -o test
 
-tests.o:tests/tests.cpp
+tests.o:tests/tests.cpp headers/generators.hpp
 	$(CXX) ${CXXFLAGS} -c tests/tests.cpp -o tests.o
 
 libkrcrand.a:tools.o Xoshiro256mm.o

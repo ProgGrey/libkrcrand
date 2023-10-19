@@ -29,11 +29,26 @@ BOOST_AUTO_TEST_CASE(Xoshiro256mm)
         BOOST_CHECK(tmp.raw()[k] == st2[k]);
     }
     Xoshiro256mmUniversalStable gen_u(st);
+#ifdef LIBKRCRAND_ENABLE_SSE2
     Xoshiro256mmSSE2stable gen_sse(st);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX2
     Xoshiro256mmAVX2stable gen_avx(st);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX512F
     Xoshiro256mmAVX512Fstable gen_avx512(st);
-    for(unsigned int k = 0; k < 10; k++){
-        cout << gen_u() << '\t' << gen_sse() << endl;
+#endif
+    for(unsigned int k = 0; k < 10000; k++){
+        uint64_t val = gen_u();
+#ifdef LIBKRCRAND_ENABLE_SSE2
+        BOOST_CHECK(val == gen_sse());
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX2
+        BOOST_CHECK(val == gen_avx());
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+        BOOST_CHECK(val == gen_avx512());
+#endif
     }
     cout << endl;
 }
