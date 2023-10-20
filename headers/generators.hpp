@@ -327,5 +327,15 @@ class Xoshiro256mmAVX512Fstable: public Generator<Xoshiro256mmState>
 #endif
 #endif
 
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+typedef  Xoshiro256mmAVX512Fstable Xoshiro256mm;
+#elif defined(LIBKRCRAND_ENABLE_AVX2)
+typedef  Xoshiro256mmAVX2stable Xoshiro256mm;
+#elif defined(LIBKRCRAND_ENABLE_SSE2)
+typedef  Xoshiro256mmSSE2stable Xoshiro256mm;
+#else
+typedef  Xoshiro256mmUniversalStable Xoshiro256mm;
+#endif
+
 }
 #endif

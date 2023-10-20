@@ -22,7 +22,7 @@ int main()
     Xoshiro256mmState st(rd());
     Xoshiro256mmUniversalStable gen1(st);
 
-    uint64_t N = 1000000000;
+    uint64_t N = 3000000000;
     auto start = chrono::system_clock::now();
     auto end = chrono::system_clock::now();
     auto diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -37,7 +37,10 @@ int main()
     test_generator("Xoshiro256mmAVX2stable: ", gen3)
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX512F
-    Xoshiro256mmAVX512F gen4(st);
+    Xoshiro256mmAVX512Fstable gen4(st);
+    test_generator("Xoshiro256mmAVX512Fstable: ", gen4)
 #endif
+    Xoshiro256mm gen5(st);
+    test_generator("Xoshiro256mm: ", gen5);
     return 0;
 }

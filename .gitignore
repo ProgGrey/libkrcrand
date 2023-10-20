@@ -4,3 +4,5 @@ test
 .vscode
 tests/mull
 speed
+RNG_test
+gen

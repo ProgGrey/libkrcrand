@@ -1,7 +1,6 @@
 #ifndef __LIBKRCRAND_PLATFORM_HPP__
 #define __LIBKRCRAND_PLATFORM_HPP__
 
-
 #ifdef __SSE2__
 #define LIBKRCRAND_ENABLE_SSE2 true
 #endif
@@ -11,6 +10,11 @@
 #ifdef __AVX512F__ 
 #define LIBKRCRAND_ENABLE_AVX512F true
 #endif
+
+#ifdef __FMA__
+#define LIBKRCRAND_ENABLE_FMA3 true
+#endif
+
 
 #ifdef LIBKRCRAND_ENABLE_AVX512F
 #define DECL_KRCRAND_ALIGN alignas(64)
