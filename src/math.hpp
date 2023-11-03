@@ -3,7 +3,7 @@
 
 #include "../headers/platform.hpp"
 
-double unsafe_log(double x);
+double unsafe_log_d(double x);
 
 #ifdef LIBKRCRAND_ENABLE_SSE2
 #include <emmintrin.h>

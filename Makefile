@@ -1,4 +1,4 @@
-CXX=g++
+CXX=clang++
 CXXFLAGS=-std=c++17 -O3 -march=native  -flto -Wall -Wextra -Wpedantic
 
 all:test speed gen
@@ -6,7 +6,7 @@ all:test speed gen
 gen:libkrcrand.a tests/gen.cpp
 	$(CXX) ${CXXFLAGS} tests/gen.cpp libkrcrand.a -o gen
 
-speed:libkrcrand.a tests/speed.cpp
+speed:libkrcrand.a tests/speed.cpp headers/exponentialDistribution.hpp
 	$(CXX) ${CXXFLAGS} tests/speed.cpp libkrcrand.a -o speed
 
 test:libkrcrand.a tests.o

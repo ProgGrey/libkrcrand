@@ -1,4 +1,5 @@
 #include "../headers/libkrcrand.hpp"
+#include "../headers/exponentialDistribution.hpp"
 #include <iostream>
 #include <chrono>
 #include <random>
@@ -22,7 +23,7 @@ int main()
     Xoshiro256mmState st(rd());
     Xoshiro256mmUniversalStable gen1(st);
 
-    uint64_t N = 3000000000;
+    uint64_t N = 10000000;
     auto start = chrono::system_clock::now();
     auto end = chrono::system_clock::now();
     auto diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -42,5 +43,7 @@ int main()
 #endif
     Xoshiro256mm gen5(st);
     test_generator("Xoshiro256mm: ", gen5);
+    ExponentialDistribution<Xoshiro256mmUniversalStable, 0> expg(1.2);
+    cout << expg() << endl;
     return 0;
 }

@@ -27,7 +27,7 @@ double horner1(double x, double* coefs, uint_fast8_t n)
 // http://www.netlib.org/cephes/
 // Max relative error is 1.523918708144333e-16 for normal numbers and 1.039444891344354e-16
 // for subnormals (10^10 test runs).
-double unsafe_log(double x)
+double unsafe_log_d(double x)
 {
     //Subnormal numbers correction. Max rel. error is 1.039444891344354e-16 for 10^10 test runs.
     double addition = 0;

@@ -88,6 +88,10 @@ private:
     virtual void fill(void) override final;
 public:
     uint64_t gen(void);
+    uint64_t gen_n(void)
+    {
+        return ~gen();
+    }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final;
     Xoshiro256mmUniversal(){}
     explicit Xoshiro256mmUniversal(const Xoshiro256mmState &state)
@@ -124,6 +128,10 @@ class Xoshiro256mmUniversalStable: public Generator<Xoshiro256mmState>
         }
         return ret;
     }
+    uint64_t gen_n(void)
+    {
+        return ~gen();
+    }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final
     {
         Xoshiro256mmState st = state;
@@ -149,6 +157,10 @@ private:
     virtual void fill(void) override final;
 public:
     __m128i gen(void);
+    __m128i gen_n(void)
+    {
+        return _mm_xor_si128(gen(), _mm_set1_epi64x(0xFFFFFFFFFFFFFFFF));
+    }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final;
     Xoshiro256mmSSE2(){}
     explicit Xoshiro256mmSSE2(const Xoshiro256mmState &state)
@@ -185,6 +197,10 @@ class Xoshiro256mmSSE2stable: public Generator<Xoshiro256mmState>
         }
         return ret;
     }
+    __m128i gen_n(void)
+    {
+        return _mm_xor_si128(gen(), _mm_set1_epi64x(0xFFFFFFFFFFFFFFFF));
+    }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final
     {
         Xoshiro256mmState st = state;
@@ -210,6 +226,10 @@ private:
     virtual void fill(void) override final;
 public:
     __m256i gen(void);
+    __m256i gen_n(void)
+    {
+        return _mm256_xor_si256(gen(), _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF));
+    }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final;
     Xoshiro256mmAVX2(){}
     explicit Xoshiro256mmAVX2(const Xoshiro256mmState &state)
@@ -246,6 +266,10 @@ class Xoshiro256mmAVX2stable: public Generator<Xoshiro256mmState>
         }
         return ret;
     }
+    __m256i gen_n(void)
+    {
+        return _mm256_xor_si256(gen(), _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF));
+    }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final
     {
         Xoshiro256mmState st = state;
@@ -271,6 +295,10 @@ private:
     virtual void fill(void) override final;
 public:
     __m512i gen(void);
+    __m512i gen_n(void)
+    {
+        return _mm512_xor_si512(gen(), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
+    }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final;
     Xoshiro256mmAVX512F(){}
     explicit Xoshiro256mmAVX512F(const Xoshiro256mmState &state) 
@@ -309,6 +337,10 @@ class Xoshiro256mmAVX512Fstable: public Generator<Xoshiro256mmState>
             pos = 0;
         }
         return ret;
+    }
+    __m512i gen_n(void)
+    {
+        return _mm512_xor_si512(gen(), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
     }
     virtual Xoshiro256mmState set_state(const Xoshiro256mmState &state) override final
     {
