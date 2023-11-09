@@ -1,5 +1,5 @@
-CXX=clang++
-CXXFLAGS=-std=c++17 -O3 -march=native  -flto -Wall -Wextra -Wpedantic
+CXX=g++
+CXXFLAGS=-std=c++17 -O3 -march=native -flto -Wall -Wextra -Wpedantic
 
 all:test speed gen
 
@@ -21,16 +21,16 @@ libkrcrand.a:tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_
 tools.o:src/tools.cpp src/tools.hpp
 	$(CXX) ${CXXFLAGS} -c src/tools.cpp -o tools.o
 
-math_generic.o:src/math/generic.cpp src/math.hpp
+math_generic.o:src/math/generic.cpp headers/math.hpp
 	$(CXX) ${CXXFLAGS} -c src/math/generic.cpp -o math_generic.o
 
-math_sse2.o:src/math/sse2.cpp src/math.hpp src/math/amd64.hpp
+math_sse2.o:src/math/sse2.cpp headers/math.hpp src/math/amd64.hpp
 	$(CXX) ${CXXFLAGS} -c src/math/sse2.cpp -o math_sse2.o
 
-math_avx2.o:src/math/avx2.cpp src/math.hpp src/math/amd64.hpp
+math_avx2.o:src/math/avx2.cpp headers/math.hpp src/math/amd64.hpp
 	$(CXX) ${CXXFLAGS} -c src/math/avx2.cpp -o math_avx2.o
 
-math_avx512.o:src/math/avx512.cpp src/math.hpp src/math/amd64.hpp
+math_avx512.o:src/math/avx512.cpp headers/math.hpp src/math/amd64.hpp
 	$(CXX) ${CXXFLAGS} -c src/math/avx512.cpp -o math_avx512.o
 
 Xoshiro256mm.o:src/generators/Xoshiro256mm.cpp headers/generators.hpp

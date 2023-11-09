@@ -1,5 +1,11 @@
-#include "../math.hpp"
+#include "../../headers/math.hpp"
 #include <cstdint>
+
+#define uniform01_exclude0_function(name) \
+d_type name(i_type a)\
+{\
+    return fma_d(conv_u_to_d(a), set1_d(5.4210108624275221703e-20), set1_d(5.4210108624275221700e-20));\
+}
 
 #define horner_function(name) \
 d_type name(d_type x, double *coefs, uint_fast8_t n) \

@@ -50,6 +50,12 @@ public:
 
     // Returns state for next generator for chained initialization.
     virtual InternalStateClass set_state(const InternalStateClass &state) = 0;
+    void seed(uint64_t s)
+    {
+        InternalStateClass tmp;
+        tmp.seed(s);
+        set_state(tmp);
+    }
 
     Generator()
     {
@@ -192,7 +198,7 @@ class Xoshiro256mmSSE2stable: public Generator<Xoshiro256mmState>
     {
         __m128i ret = gens[pos].gen();
         pos++;
-        if(pos >= COMPAB_COUNT_AVX2){
+        if(pos >= COMPAB_COUNT_SSE2){
             pos = 0;
         }
         return ret;

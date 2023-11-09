@@ -1,7 +1,9 @@
 #include "../../headers/platform.hpp"
 #ifdef LIBKRCRAND_ENABLE_AVX512F
 #include <immintrin.h>
-#include "../math.hpp"
+#include "../../headers/math.hpp"
+
+using namespace krcrand;
 
 #define d_type __m512d
 #define i_type __m512i
@@ -32,10 +34,29 @@
 #define mov_mask_d(flag, if_true, if_false) _mm512_mask_mov_pd (if_false, flag, if_true)
 
 #define __AVX512_BRANCH__
-
 #include "amd64.hpp"
+
+#ifdef LIBKRCRAND_ENABLE_AVX512DQ
+#define  conv_u_to_d(x) _mm512_cvtepu64_pd(x)
+#else
+__m512d u64_to_d_avx512(__m512i x)
+{
+    alignas(64) uint64_t val[8];
+    _mm512_store_epi64(val, x);
+    alignas(64) double res[8];
+    for(unsigned int k =0; k < 8; k++){
+        res[k] = val[k];
+    }
+    return _mm512_load_pd(res);
+    
+}
+#define  conv_u_to_d(x) u64_to_d_avx512(x)
+#endif
 
 horner_function(horner_avx512)
 horner1_function(horner1_avx512)
-log_function(unsafe_log_avx512, horner_avx512, horner1_avx512)
+namespace krcrand{
+uniform01_exclude0_function(uniform01_exclude0)
+log_function(unsafe_log, horner_avx512, horner1_avx512)
+}
 #endif

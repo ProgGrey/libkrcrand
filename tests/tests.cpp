@@ -1,5 +1,6 @@
 #include "../headers/libkrcrand.hpp"
-#include "../src/math.hpp"
+#include "../headers/math.hpp"
+#include "../headers/exponentialDistribution.hpp"
 
 #define BOOST_TEST_MODULE main_test_module
 #define BOOST_TEST_MAIN
@@ -12,6 +13,20 @@
 using namespace std;
 using namespace krcrand;
 
+BOOST_AUTO_TEST_CASE(constant_tests)
+{
+    BOOST_CHECK(sizeof(uint64_t) == sizeof(double));
+    BOOST_CHECK(Generator_Buff_Size*sizeof(uint64_t) % sizeof(uint64_t) == 0);
+#ifdef LIBKRCRAND_ENABLE_SSE2
+    BOOST_CHECK(Generator_Buff_Size*sizeof(uint64_t) % sizeof(__m128i) == 0);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX2
+    BOOST_CHECK(Generator_Buff_Size*sizeof(uint64_t) % sizeof(__m256i) == 0);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+    BOOST_CHECK(Generator_Buff_Size*sizeof(uint64_t) % sizeof(__m512i) == 0);
+#endif
+}
 
 BOOST_AUTO_TEST_CASE(Xoshiro256mmGenerators)
 {
@@ -39,7 +54,7 @@ BOOST_AUTO_TEST_CASE(Xoshiro256mmGenerators)
 #ifdef LIBKRCRAND_ENABLE_AVX512F
     Xoshiro256mmAVX512Fstable gen_avx512(st);
 #endif
-    for(unsigned int k = 0; k < 10000; k++){
+    for(unsigned int k = 0; k < 100*Generator_Buff_Size; k++){
         uint64_t val = gen_u();
 #ifdef LIBKRCRAND_ENABLE_SSE2
         BOOST_CHECK(val == gen_sse());
@@ -51,7 +66,6 @@ BOOST_AUTO_TEST_CASE(Xoshiro256mmGenerators)
         BOOST_CHECK(val == gen_avx512());
 #endif
     }
-    cout << endl;
 }
 
 
@@ -69,7 +83,7 @@ BOOST_AUTO_TEST_CASE(math_tests)
     double sse2_res[8];
     for(unsigned int k = 0; k < 8; k+=2){
         __m128d val = _mm_loadu_pd(values + k);
-        val = unsafe_log_sse2(val);
+        val = unsafe_log(val);
         _mm_storeu_pd(sse2_res+k, val);
         BOOST_CHECK(uni_res[k] == sse2_res[k]);
         BOOST_CHECK(uni_res[k+1] == sse2_res[k+1]);
@@ -79,7 +93,7 @@ BOOST_AUTO_TEST_CASE(math_tests)
     double avx2_res[8];
     for(unsigned int k = 0; k < 8; k+=4){
         __m256d val = _mm256_loadu_pd(values + k);
-        val = unsafe_log_avx2(val);
+        val = unsafe_log(val);
         _mm256_storeu_pd(avx2_res+k, val);
     }
     for(unsigned int k = 0; k < 8; k++){
@@ -89,10 +103,65 @@ BOOST_AUTO_TEST_CASE(math_tests)
 #ifdef LIBKRCRAND_ENABLE_AVX512F
     double avx512_res[8];
     __m512d val512 = _mm512_loadu_pd(values);
-    val512 = unsafe_log_avx512(val512);
+    val512 = unsafe_log(val512);
     _mm512_storeu_pd(avx512_res, val512);
     for(unsigned int k = 0; k < 8; k++){
         BOOST_CHECK(uni_res[k] == avx512_res[k]);
     }
 #endif
+}
+
+BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
+{
+    Xoshiro256mmState st;
+    st.seed(1);
+    ExponentialDistribution<Xoshiro256mmUniversalStable, 0> exp_u(9.8);
+    exp_u.generator.set_state(st);
+    ExponentialDistribution<Xoshiro256mmUniversalStable, 1> exp_u_n(9.8);
+    exp_u_n.generator.set_state(st);
+#ifdef LIBKRCRAND_ENABLE_SSE2
+    ExponentialDistribution<Xoshiro256mmSSE2stable, 0> exp_sse2(9.8);
+    exp_sse2.generator.set_state(st);
+    ExponentialDistribution<Xoshiro256mmSSE2stable, 1> exp_sse2_n(9.8);
+    exp_sse2_n.generator.set_state(st);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX2
+    ExponentialDistribution<Xoshiro256mmAVX2stable, 0> exp_avx2(9.8);
+    exp_avx2.generator.set_state(st);
+    ExponentialDistribution<Xoshiro256mmAVX2stable, 1> exp_avx2_n(9.8);
+    exp_avx2_n.generator.set_state(st);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+    ExponentialDistribution<Xoshiro256mmAVX512Fstable, 0> exp_avx512(9.8);
+    exp_avx512.generator.set_state(st);
+    ExponentialDistribution<Xoshiro256mmAVX2stable, 1> exp_avx512_n(9.8);
+    exp_avx512_n.generator.set_state(st);
+#endif
+    unsigned int N = 100*Generator_Buff_Size;
+    double mx = 0,my = 0,mxy = 0;
+    for(unsigned int k = 0; k < N; k++){
+        double val = exp_u();
+        mx += val/N;
+        double val_n = exp_u_n();
+        my += val_n/N;
+        mxy += val*val_n/N;
+        //cout << val << '|' << val_n << ',';
+#ifdef LIBKRCRAND_ENABLE_SSE2
+        BOOST_CHECK(fabs(val - exp_sse2())/val < 1e-15);
+        BOOST_CHECK(fabs(val_n - exp_sse2_n())/val_n  < 1e-15);
+        //cout << exp_sse2_n() << ',';
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX2
+        BOOST_CHECK(fabs(val - exp_avx2())/val < 1e-15);
+        BOOST_CHECK(fabs(val_n == exp_avx2_n())/val_n < 1e-15);
+        cout << exp_avx2_n() << ',';
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+        BOOST_CHECK(val == exp_avx512());
+        BOOST_CHECK(val_n == exp_avx512_n());
+        //cout <<  exp_avx512_n() << endl;
+#endif
+    }
+    // Antithetic variates test:
+    BOOST_CHECK((mxy-mx*my) < -0.006);
 }

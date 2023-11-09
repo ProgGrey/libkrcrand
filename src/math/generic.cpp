@@ -1,9 +1,8 @@
-#include "../math.hpp"
+#include "../../headers/math.hpp"
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
-
 
 double horner(double x, double *coefs, uint_fast8_t n)
 {
@@ -23,11 +22,18 @@ double horner1(double x, double* coefs, uint_fast8_t n)
     return val;
 }
 
+namespace krcrand{
+
+double uniform01_exclude0(uint64_t a)
+{
+    return fma(double(a), 5.4210108624275221703e-20, 5.4210108624275221700e-20);
+}
+
 // Based on algorithm from Cephes 2.8 math library by Stephen L. Moshier 1984, 1995, 2000
 // http://www.netlib.org/cephes/
 // Max relative error is 1.523918708144333e-16 for normal numbers and 1.039444891344354e-16
 // for subnormals (10^10 test runs).
-double unsafe_log_d(double x)
+double unsafe_log(double x)
 {
     //Subnormal numbers correction. Max rel. error is 1.039444891344354e-16 for 10^10 test runs.
     double addition = 0;
@@ -79,4 +85,6 @@ double unsafe_log_d(double x)
     //res += loge2_p * exp;
     res = fma(loge2_p, exp, res);
     return res + addition;
+}
+
 }
