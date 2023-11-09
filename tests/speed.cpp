@@ -3,6 +3,7 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <functional>
 
 using namespace std;
 using namespace krcrand;
@@ -30,16 +31,19 @@ int main()
 {
     random_device rd;
     mt19937_64 gen0(rd());
+    exponential_distribution<double> exp_dist(1.2);
+    auto exp0 = bind(exp_dist, gen0);
     //Xoshiro256mmState st(rd());
     Xoshiro256mmState st(1);
     Xoshiro256mmUniversalStable gen1(st);
     
     double mean;
-    uint64_t N = 10000000;
+    uint64_t N = 1000000000;
     auto start = chrono::system_clock::now();
     auto end = chrono::system_clock::now();
     auto diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
     test_generator("mt19937_64: ", gen0)
+    test_exp_dist("mt19937_64 Exp: ", exp0)
     test_generator("Xoshiro256mmUniversalStable: ", gen1)
     ExponentialDistribution<Xoshiro256mmUniversalStable, 0> exp1(1.2);
     exp1.generator.set_state(st);

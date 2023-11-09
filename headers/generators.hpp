@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <cstring>
-#include "constants.hpp"
 #include "platform.hpp"
 
 #ifdef LIBKRCRAND_ENABLE_SSE2
