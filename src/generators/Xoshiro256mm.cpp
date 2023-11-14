@@ -88,13 +88,13 @@ uint64_t Xoshiro256mmUniversal::gen(void)
 
 Xoshiro256mmState Xoshiro256mmSSE2::set_state(const Xoshiro256mmState &state)
 {
-	uint64_t s1[state.State_Size];
-	uint64_t s2[state.State_Size];
+	uint64_t s1[Xoshiro256mmState::State_Size];
+	uint64_t s2[Xoshiro256mmState::State_Size];
 	uint64_t buf[2];
     memcpy(s1, state.raw(), sizeof(uint64_t)*state.State_Size);
 	auto tmp = state.jump();
 	memcpy(s2, tmp.raw(), sizeof(uint64_t)*tmp.State_Size);
-	for(unsigned int k = 0; k < state.State_Size; k++){
+	for(unsigned int k = 0; k < Xoshiro256mmState::State_Size; k++){
 		buf[0] = s1[k];
 		buf[1] = s2[k];
 		memcpy(&(this->state[k]), buf, sizeof(uint64_t)*2);
@@ -143,14 +143,14 @@ void Xoshiro256mmSSE2::fill(void)
 
 Xoshiro256mmState Xoshiro256mmAVX2::set_state(const Xoshiro256mmState &state)
 {
-	uint64_t s[4][state.State_Size];
+	uint64_t s[4][Xoshiro256mmState::State_Size];
 	uint64_t buf[4];
 	Xoshiro256mmState tmp = state;
 	for(unsigned int k =0; k < 4; k++){
 		memcpy(s[k], tmp.raw(), sizeof(uint64_t)*tmp.State_Size);
 		tmp = tmp.jump();
 	}
-	for(unsigned int k = 0; k < state.State_Size; k++){
+	for(unsigned int k = 0; k < Xoshiro256mmState::State_Size; k++){
 		for(unsigned int i = 0; i < 4; i++){
 			buf[i] = s[i][k];
 		}
@@ -196,14 +196,14 @@ void Xoshiro256mmAVX2::fill(void)
 
 Xoshiro256mmState Xoshiro256mmAVX512F::set_state(const Xoshiro256mmState &state)
 {
-	uint64_t s[8][state.State_Size];
+	uint64_t s[8][Xoshiro256mmState::State_Size];
 	uint64_t buf[8];
 	Xoshiro256mmState tmp = state;
 	for(unsigned int k =0; k < 8; k++){
 		memcpy(s[k], tmp.raw(), sizeof(uint64_t)*tmp.State_Size);
 		tmp = tmp.jump();
 	}
-	for(unsigned int k = 0; k < state.State_Size; k++){
+	for(unsigned int k = 0; k < Xoshiro256mmState::State_Size; k++){
 		for(unsigned int i = 0; i < 8; i++){
 			buf[i] = s[i][k];
 		}

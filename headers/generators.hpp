@@ -49,11 +49,11 @@ public:
 
     // Returns state for next generator for chained initialization.
     virtual InternalStateClass set_state(const InternalStateClass &state) = 0;
-    void seed(uint64_t s)
+    InternalStateClass seed(uint64_t s)
     {
         InternalStateClass tmp;
         tmp.seed(s);
-        set_state(tmp);
+        return set_state(tmp);
     }
 
     Generator()

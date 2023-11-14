@@ -1,4 +1,5 @@
-CXX=g++
+CXX=clang++
+AR=llvm-ar
 CXXFLAGS=-std=c++17 -O3 -march=native -flto -Wall -Wextra -Wpedantic
 
 all:test speed gen
@@ -16,7 +17,7 @@ tests.o:tests/tests.cpp headers/generators.hpp
 	$(CXX) ${CXXFLAGS} -c tests/tests.cpp -o tests.o
 
 libkrcrand.a:tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o
-	ar crf libkrcrand.a tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o
+	$(AR) rc libkrcrand.a tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o
 
 tools.o:src/tools.cpp src/tools.hpp
 	$(CXX) ${CXXFLAGS} -c src/tools.cpp -o tools.o

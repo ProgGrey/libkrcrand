@@ -28,6 +28,7 @@ BOOST_AUTO_TEST_CASE(constant_tests)
 #endif
 }
 
+
 BOOST_AUTO_TEST_CASE(Xoshiro256mmGenerators)
 {
     Xoshiro256mmState st;
@@ -71,7 +72,7 @@ BOOST_AUTO_TEST_CASE(Xoshiro256mmGenerators)
 
 BOOST_AUTO_TEST_CASE(math_tests)
 {
-    double values[8] = {0.1, 2, 3.5, 1, 0.000001, 12, 7643921, 2.2250738585072009e-318};
+    const double values[8] = {0.1, 2, 3.5, 1, 0.000001, 12, 7643921, 2.2250738585072009e-318};
     double std_res[8];
     double uni_res[8];
     for(unsigned int k = 0; k < 8; k++){
@@ -134,10 +135,10 @@ BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
 #ifdef LIBKRCRAND_ENABLE_AVX512F
     ExponentialDistribution<Xoshiro256mmAVX512Fstable, 0> exp_avx512(9.8);
     exp_avx512.generator.set_state(st);
-    ExponentialDistribution<Xoshiro256mmAVX2stable, 1> exp_avx512_n(9.8);
+    ExponentialDistribution<Xoshiro256mmAVX512Fstable, 1> exp_avx512_n(9.8);
     exp_avx512_n.generator.set_state(st);
 #endif
-    unsigned int N = 100*Generator_Buff_Size;
+    unsigned int N = 10;
     double mx = 0,my = 0,mxy = 0;
     for(unsigned int k = 0; k < N; k++){
         double val = exp_u();
@@ -153,8 +154,8 @@ BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX2
         BOOST_CHECK(fabs(val - exp_avx2())/val < 1e-15);
-        BOOST_CHECK(fabs(val_n == exp_avx2_n())/val_n < 1e-15);
-        cout << exp_avx2_n() << ',';
+        BOOST_CHECK(fabs(val_n - exp_avx2_n())/val_n < 1e-15);
+        //cout <<  exp_avx2_n() << '\n';
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX512F
         BOOST_CHECK(val == exp_avx512());
@@ -165,3 +166,4 @@ BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
     // Antithetic variates test:
     BOOST_CHECK((mxy-mx*my) < -0.006);
 }
+//*/

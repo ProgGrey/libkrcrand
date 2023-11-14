@@ -11,6 +11,7 @@ inline double type_depend_mull(double a, double b){
 double uniform01_exclude0(uint64_t a);
 double unsafe_log(double x);
 double unsafe_lambertw0(double x);
+double unsafe_lambertw1(double x);
 }
 #ifdef LIBKRCRAND_ENABLE_SSE2
 #include <emmintrin.h>

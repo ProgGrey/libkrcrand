@@ -1,15 +1,13 @@
 #include "platform.hpp"
 #include "math.hpp"
-#include <type_traits>
 #include <typeinfo>
-#include <iostream>
 
 namespace krcrand{
 
 template<typename GenType, int is_inverted> class ExponentialDistribution
 {
 private:
-    unsigned int pos = Generator_Buff_Size;
+    unsigned int pos;
     DECL_KRCRAND_ALIGN double buf[Generator_Buff_Size];
     double mult;
     auto entropy()
@@ -42,11 +40,13 @@ public:
         }
         return(buf[pos]);
     }
-    ExponentialDistribution(double lambda){
+    explicit ExponentialDistribution(double lambda){
+        pos = Generator_Buff_Size;
         generator.seed(0);
         mult = -1.0/lambda;
     }
     ExponentialDistribution(uint64_t seed, double lambda){
+        pos = Generator_Buff_Size;
         generator.seed(seed);
         mult = -1.0/lambda;
     }

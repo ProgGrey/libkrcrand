@@ -39,9 +39,9 @@ int main()
     
     double mean;
     uint64_t N = 1000000000;
-    auto start = chrono::system_clock::now();
-    auto end = chrono::system_clock::now();
-    auto diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    chrono::_V2::system_clock::time_point start;
+    chrono::_V2::system_clock::time_point end;
+    chrono::milliseconds diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);
     test_generator("mt19937_64: ", gen0)
     test_exp_dist("mt19937_64 Exp: ", exp0)
     test_generator("Xoshiro256mmUniversalStable: ", gen1)
