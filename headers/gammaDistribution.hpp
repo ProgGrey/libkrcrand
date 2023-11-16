@@ -2,8 +2,7 @@
 #include "math.hpp"
 #include <cmath>
 #include <typeinfo>
-
-#include <iostream>
+#include "exponentialDistribution.hpp"
 
 namespace krcrand{
 
@@ -16,10 +15,12 @@ private:
 
     GenType generator_base;
     GenType generator_exp;
+    ExponentialDistribution<GenType, 0> exp_dist;
     GenType generator_gamma;
     GenType generator_p;
     double exp_gen()
     {
+        return exp_dist() + x0;
         return x0-lam_m1*log(uniform01_exclude0(generator_exp()));
         return x0-lam_m1*log(exp_lam_x0 - uniform01_exclude0(generator_exp()));
     }
@@ -64,16 +65,16 @@ private:
     
     void init(double alpha, double beta, uint64_t seed)
     {
-        auto gs = generator_base.seed(seed);
-        gs = generator_exp.set_state(gs);
-        gs = generator_gamma.set_state(gs);
-        generator_p.set_state(gs);
         if(alpha <= 1.0 || beta <= 0.0){
             throw;
         }
         // Exp generator
         x0 = fma(alpha, beta, -beta);
         lambda = 1.0/beta;
+        GenType gs = generator_base.seed(seed);
+        gs = generator_gamma.set_state(gs);
+        gs = generator_p.set_state(gs);
+        exp_dist = ExponentialDistribution<GenType, 0>(gs, lambda);
         p = pow(alpha-1, alpha-1)/(exp(alpha-1)*tgamma(alpha));
         exp_lam_x0 = exp(lambda * x0);
         lam_m1 = 1/lambda;

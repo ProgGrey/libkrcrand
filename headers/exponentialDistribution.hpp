@@ -1,6 +1,7 @@
 #include "platform.hpp"
 #include "math.hpp"
 #include <typeinfo>
+#include "generators.hpp"
 
 namespace krcrand{
 
@@ -48,6 +49,13 @@ public:
     ExponentialDistribution(uint64_t seed, double lambda){
         pos = Generator_Buff_Size;
         generator.seed(seed);
+        mult = -1.0/lambda;
+    }
+
+    ExponentialDistribution(InternalStateClass &state, double lambda)
+    {
+        pos = Generator_Buff_Size;
+        state = generator.set_state(state);
         mult = -1.0/lambda;
     }
 };
