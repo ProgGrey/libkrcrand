@@ -3,6 +3,8 @@
 #include <cmath>
 #include <typeinfo>
 
+#include <iostream>
+
 namespace krcrand{
 
 template<typename GenType> class GammaDistributionSplited
@@ -18,13 +20,15 @@ private:
     GenType generator_p;
     double exp_gen()
     {
+        return x0-lam_m1*log(uniform01_exclude0(generator_exp()));
         return x0-lam_m1*log(exp_lam_x0 - uniform01_exclude0(generator_exp()));
     }
     // for helping dist
     double hd_mult, hd_lam_mult, hd_add;
     double help_dist()
     {
-        double um1 = uniform01_exclude0(generator_gamma());
+        double um1 = -uniform01_exclude0(generator_gamma());
+        //std::cout << "um1 " << um1 << std::endl;
         return hd_mult*unsafe_lambertw1(um1*hd_lam_mult) + hd_add;
     }
 
@@ -39,7 +43,7 @@ private:
     }
     double rat_right(double x)
     {
-        e = exp(fma(left_exp_m,x,left_exp_a));
+        double e = exp(fma(left_exp_m,x,left_exp_a));
         return e*right_mull*fma(pow(x, a_subs_1),right_x_mull, right_x_add)/(x+1.0);
     }
     double rat(double x)
@@ -60,7 +64,6 @@ private:
     
     void init(double alpha, double beta, uint64_t seed)
     {
-        pos = Generator_Buff_Size;
         auto gs = generator_base.seed(seed);
         gs = generator_exp.set_state(gs);
         gs = generator_gamma.set_state(gs);
@@ -80,7 +83,7 @@ private:
         double a34 = sqa*sqsqa;
         hd_mult = -beta*a34;
         hd_add = hd_mult - 1.0;
-        double tmp = 1.0+1.0/a34;
+        double tmp = 1.0+1.0/(a34*beta);
         hd_lam_mult = tmp*exp(-tmp);
         // Test function x<=x0:
         left_exp_m = (1.0-a34)/(a34*beta);
@@ -106,16 +109,31 @@ private:
                 max_value_m1 = tmp;
             }
         }
+        std::cout << max_value_m1 << std::endl;
+        std::cout << x0 << std::endl;
+        max_value_m1 = 1.0/max_value_m1;
     }
 public:
+    uint64_t max_fails=0;
+    uint64_t sum_fails=0;
     double operator()(){
+        //return help_dist();
+        //return exp_gen();
         double x;
         if(uniform01(generator_p()) < p){
             return exp_gen();
         }
+        int fails = -1;
         do{
             x =  help_dist();
+            fails++;
+           //std::cout << "hd: " <<  x << std::endl;
         }while(test(x) < uniform01(generator_base()));
+        //std::cout << "x: " <<  x << std::endl;
+        sum_fails += fails;
+        if(max_fails < fails){
+            max_fails = fails;
+        }
         return x;
     }
     explicit GammaDistributionSplited(double alpha, double beta){

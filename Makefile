@@ -1,8 +1,11 @@
 CXX=clang++
 AR=llvm-ar
-CXXFLAGS=-std=c++17 -O3 -march=native -flto -Wall -Wextra -Wpedantic
+CXXFLAGS=-std=c++20 -O3 -march=native -flto -Wall -Wextra -Wpedantic
 
-all:test speed gen
+all:test speed gen gamma
+
+gamma:libkrcrand.a tests/gamma.cpp  headers/gammaDistribution.hpp
+	$(CXX) ${CXXFLAGS} tests/gamma.cpp libkrcrand.a -o gamma
 
 gen:libkrcrand.a tests/gen.cpp
 	$(CXX) ${CXXFLAGS} tests/gen.cpp libkrcrand.a -o gen
