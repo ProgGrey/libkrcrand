@@ -24,6 +24,12 @@ double horner1(double x, const double* coefs, uint_fast8_t n)
 
 namespace krcrand{
 
+double uniform01(uint64_t a)
+{
+    return double(a)*5.4210108624275221703e-20;
+}
+
+
 double uniform01_exclude0(uint64_t a)
 {
     return fma(double(a), 5.4210108624275221703e-20, 5.4210108624275221700e-20);

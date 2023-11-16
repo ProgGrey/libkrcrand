@@ -16,48 +16,38 @@ private:
     GenType generator_exp;
     GenType generator_gamma;
     GenType generator_p;
-    double ExpGen()
+    double exp_gen()
     {
         return x0-lam_m1*log(exp_lam_x0 - uniform01_exclude0(generator_exp()));
     }
     // for helping dist
-    double hd_add, hd_pow, hd_mult, hd_max;
+    double hd_mult, hd_lam_mult, hd_add;
     double help_dist()
     {
-       return fma(hd_mult, unsafe_lambertw1(hd_pow*(-uniform01_exclude0(generator_base()))), hd_add);
+        double um1 = uniform01_exclude0(generator_gamma());
+        return hd_mult*unsafe_lambertw1(um1*hd_lam_mult) + hd_add;
     }
 
-    double e_bm1, e_pow;
-    double exp_pdf(double x)
+    double left_exp_m, left_exp_a;
+    double left_mull;
+    double a_subs_2;
+    double a_subs_1, right_x_mull, right_x_add, right_mull;
+    double rat_left(double x)
     {
-        return exp(x*e_bm1)*e_pow;
+        double e = exp(fma(left_exp_m,x,left_exp_a));
+        return left_mull*e*pow(x,a_subs_1)/(x+1.0);
     }
-
-    double g_mult;
-    double gamma_pdf(double x)
+    double rat_right(double x)
     {
-        return g_mult*pow(x,alpha - 1)*exp(x*e_bm1);
+        e = exp(fma(left_exp_m,x,left_exp_a));
+        return e*right_mull*fma(pow(x, a_subs_1),right_x_mull, right_x_add)/(x+1.0);
     }
-
-    double pdf(double x)
-    {
-        if(x <= x0){
-            return gamma_pdf(x)/(1-p);
-        } else{
-            return fma(exp_pdf(x), -p, gamma_pdf(x))/(1-p);
-        }
-    }
-
-    double rat_e_add, rat_e_m, rat_e_den;
-    double alpha_addm1, rat_num_mul;
     double rat(double x)
     {
         if(x <= x0){
-            double num = exp(fma(x,rat_e_m,rat_e_add)*rat_e_den)
-            num *= pow(x,alpha_addm1)*rat_num_mul;
-            num/= fma(alpha_addm1, x, 1);
+            return rat_left(x);
         } else{
-
+            return rat_right(x);
         }
     }
     
@@ -68,8 +58,13 @@ private:
     }
 
     
-    void init(double alpha, double beta)
+    void init(double alpha, double beta, uint64_t seed)
     {
+        pos = Generator_Buff_Size;
+        auto gs = generator_base.seed(seed);
+        gs = generator_exp.set_state(gs);
+        gs = generator_gamma.set_state(gs);
+        generator_p.set_state(gs);
         if(alpha <= 1.0 || beta <= 0.0){
             throw;
         }
@@ -80,41 +75,54 @@ private:
         exp_lam_x0 = exp(lambda * x0);
         lam_m1 = 1/lambda;
         // Generator for helping dist
-        double num = fma(fma(alpha, alpha, -alpha),beta,fma(beta*beta, fma(2.0, alpha, -2.0), 2.0));
-        double tmp = fma(-2.0,alpha, 2.0);
-        hd_add = num/tmp;
-        double den = fma(2.0, beta, alpha)*fma(alpha,beta,-beta);
-        hd_pow = num/den;
-        hd_mult = den/tmp;
-        hd_pow = hd_pow * exp(-hd_pow);
-        // pdfs
-        e_bm1 = -1.0/beta;
-        e_pow = -e_bm1*exp(alpha - 1.0);
-        g_mult = 1.0/(pow(beta,alpha)*tgamma(alpha));
-        //Test function
-        alpha_addm1 = alpha - 1;
-        rat_e_m = -a - 2*b + 2;
-        rat_e_add = (2*a - 2)*b^2 + (a^2 - a)*b;
-        rat_e_den = 1/(b*(2*b + a));
-        rat_num_mul = (2*b + a)*(a - 1)*b^(1 - a)*(a^2*b + (2*b^2 - b)*a - 2*b^2 + 2)/(4*(exp(a - 1)*GAMMA(a)*(a - 1) - (a - 1)^a));
-
-
+        double sqsqa = sqrt(sqrt(alpha));
+        double sqa = sqrt(alpha);
+        double a34 = sqa*sqsqa;
+        hd_mult = -beta*a34;
+        hd_add = hd_mult - 1.0;
+        double tmp = 1.0+1.0/a34;
+        hd_lam_mult = tmp*exp(-tmp);
+        // Test function x<=x0:
+        left_exp_m = (1.0-a34)/(a34*beta);
+        left_exp_a = alpha - 1;
+        a_subs_2 = alpha - 2;
+        left_mull = sqa*((sqsqa*alpha-sqsqa)*pow(beta,1.0-alpha)+alpha*pow(beta,2.0-alpha)*(alpha-1.0))/
+                    (exp(alpha - 1.0)*tgamma(alpha)*(alpha-1.0)-pow(alpha - 1.0, alpha));
+        //Test function x > x0
+        right_mull = sqa*fma(alpha,beta, sqsqa)/(exp(alpha - 1.0)*tgamma(alpha)-pow(alpha - 1.0, alpha - 1.0));
+        a_subs_1 = alpha - 1.0;
+        right_x_mull = pow(beta, 1.0-alpha);
+        right_x_add = -pow(alpha - 1.0, alpha - 1.0);
+        // Find maximum
+        max_value_m1 = rat_left(0);
+        tmp = rat_left(x0);
+        if(tmp > max_value_m1){
+            max_value_m1 = tmp;
+        }
+        tmp = (1.0+sqa*sqsqa*(alpha*beta-(2.0*beta+1.0)) + sqrt(1 + ((beta*(alpha*beta - 4.0*beta + 2.0)*alpha - 2.0*sqsqa*beta + (4.0*beta)*beta + 1.0)*alpha - 2.0*sqsqa)*sqa))/(2*(sqa*sqsqa-1.0));
+        if(tmp > 0 && tmp < x0){
+            tmp = rat_left(tmp);
+            if(tmp > max_value_m1){
+                max_value_m1 = tmp;
+            }
+        }
     }
 public:
     double operator()(){
         double x;
+        if(uniform01(generator_p()) < p){
+            return exp_gen();
+        }
         do{
             x =  help_dist();
-        }while(test(x) < uniform01(generator_p()));
+        }while(test(x) < uniform01(generator_base()));
         return x;
     }
     explicit GammaDistributionSplited(double alpha, double beta){
-        pos = Generator_Buff_Size;
-        generator_base.seed(0);
+        init(alpha, beta, 0);
     }
     GammaDistributionSplited(uint64_t seed, double alpha, double beta){
-        pos = Generator_Buff_Size;
-        generator_base.seed(seed);
+        init(alpha, beta, seed);
     }
 };
 

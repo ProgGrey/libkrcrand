@@ -9,6 +9,7 @@ inline double type_depend_mull(double a, double b){
     return a*b;
 }
 double uniform01_exclude0(uint64_t a);
+double uniform01(uint64_t a);
 double unsafe_log(double x);
 double unsafe_lambertw0(double x);
 double unsafe_lambertw1(double x);
