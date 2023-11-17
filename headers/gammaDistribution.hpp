@@ -67,7 +67,7 @@ private:
     }
 
 
-    auto init_gens(auto state, bool is_exp)
+    GeneratorStateType init_gens(GeneratorStateType state, bool is_exp)
     {
         state = generator_base.set_state(state);
         state = generator_gamma.set_state(state);
@@ -78,7 +78,7 @@ private:
         return state;
     }
     
-    auto init(double alpha, double beta, auto gs)
+    GeneratorStateType init(double alpha, double beta, GeneratorStateType gs)
     {
         if(alpha <= 1.0 || beta <= 0.0){
             throw;
@@ -170,8 +170,14 @@ public:
         return exp_flag;
     }
 
+    GammaDistributionSplited(){
+        GeneratorStateType state(0);
+        init(2, 1, state);
+    }
+
     explicit GammaDistributionSplited(double alpha, double beta){
-        init(alpha, beta, 0);
+        GeneratorStateType state(0);
+        init(alpha, beta, state);
     }
     explicit GammaDistributionSplited(double alpha, double beta, uint64_t seed){
         GeneratorStateType state(seed);

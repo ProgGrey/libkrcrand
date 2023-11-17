@@ -5,7 +5,7 @@
 
 namespace krcrand{
 
-template<typename GenType, int is_inverted> class ExponentialDistribution
+template<typename GenType, int is_inverted, typename GeneratorStateType = GenType::GeneratorStateType> class ExponentialDistribution
 {
 private:
     unsigned int pos;
@@ -60,13 +60,13 @@ public:
         mult = -1.0/lambda;
     }
 
-    explicit ExponentialDistribution(double lambda, auto &state)
+    explicit ExponentialDistribution(double lambda, GeneratorStateType &state)
     {
         pos = Generator_Buff_Size;
         state = generator.set_state(state);
         mult = -1.0/lambda;
     }
-    auto set_state(auto state)
+    GeneratorStateType set_state(GeneratorStateType state)
     {
         return generator.set_state(state);
     }
