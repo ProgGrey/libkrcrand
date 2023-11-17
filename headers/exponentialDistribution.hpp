@@ -31,8 +31,10 @@ private:
             memcpy(buf + k, &val, sizeof(val));
         }
     }
-public:
+    
     GenType generator;
+
+public:
     double operator()(){
         pos++;
         if(pos>=Generator_Buff_Size){
@@ -40,23 +42,33 @@ public:
             fill();
         }
         return(buf[pos]);
+    
+    }
+    ExponentialDistribution(){
+        pos = Generator_Buff_Size;
+        generator.seed(0);
+        mult = -1.0;
     }
     explicit ExponentialDistribution(double lambda){
         pos = Generator_Buff_Size;
         generator.seed(0);
         mult = -1.0/lambda;
     }
-    ExponentialDistribution(uint64_t seed, double lambda){
+    explicit ExponentialDistribution(double lambda, uint64_t seed){
         pos = Generator_Buff_Size;
         generator.seed(seed);
         mult = -1.0/lambda;
     }
 
-    ExponentialDistribution(InternalStateClass &state, double lambda)
+    explicit ExponentialDistribution(double lambda, auto &state)
     {
         pos = Generator_Buff_Size;
         state = generator.set_state(state);
         mult = -1.0/lambda;
+    }
+    auto set_state(auto state)
+    {
+        return generator.set_state(state);
     }
 };
 

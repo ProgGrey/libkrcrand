@@ -46,33 +46,33 @@ int main()
     test_exp_dist("mt19937_64 Exp: ", exp0)
     test_generator("Xoshiro256mmUniversalStable: ", gen1)
     ExponentialDistribution<Xoshiro256mmUniversalStable, 0> exp1(1.2);
-    exp1.generator.set_state(st);
+    exp1.set_state(st);
     test_exp_dist("Xoshiro256mmUniversalStable Exp: ", exp1)
 #ifdef LIBKRCRAND_ENABLE_SSE2
     Xoshiro256mmSSE2stable gen2(st);
     test_generator("Xoshiro256mmSSE2stable: ", gen2)
     ExponentialDistribution<Xoshiro256mmSSE2stable, 0> exp2(1.2);
-    exp2.generator.set_state(st);
+    exp2.set_state(st);
     test_exp_dist("Xoshiro256mmSSE2stable Exp: ", exp2)
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX2
     Xoshiro256mmAVX2stable gen3(st);
     test_generator("Xoshiro256mmAVX2stable: ", gen3)
     ExponentialDistribution<Xoshiro256mmAVX2stable, 0> exp3(1.2);
-    exp3.generator.set_state(st);
+    exp3.set_state(st);
     test_exp_dist("Xoshiro256mmAVX2stable Exp: ", exp3)
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX512F
     Xoshiro256mmAVX512Fstable gen4(st);
     test_generator("Xoshiro256mmAVX512Fstable: ", gen4)
     ExponentialDistribution<Xoshiro256mmAVX512Fstable, 0> exp4(1.2);
-    exp4.generator.set_state(st);
+    exp4.set_state(st);
     test_exp_dist("Xoshiro256mmAVX512Fstable Exp: ", exp4)
 #endif
     Xoshiro256mm gen5(st);
     test_generator("Xoshiro256mm: ", gen5);
     ExponentialDistribution<Xoshiro256mm, 0> exp5(1.2);
-    exp5.generator.set_state(st);
+    exp5.set_state(st);
     test_exp_dist("Xoshiro256mm Exp: ", exp5)
     
     return 0;

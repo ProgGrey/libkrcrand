@@ -9,9 +9,9 @@ using namespace krcrand;
 
 int main()
 {
-    GammaDistributionSplited<Xoshiro256mm> gen(3,2);
-    for(unsigned int j =0; j < 1000; j++){
-        for(unsigned int k =0; k < 100; k++){
+    GammaDistributionSplited<Xoshiro256mm> gen(nextafter(1,2), 1, 1);
+    for(unsigned int j =0; j < 1; j++){
+        for(unsigned int k =0; k < 10; k++){
             cout << format("{}", gen()) << ", ";
         }
         cout << endl;

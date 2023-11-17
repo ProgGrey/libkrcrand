@@ -6,7 +6,7 @@
 
 namespace krcrand{
 
-template<typename GenType> class GammaDistributionSplited
+template<typename GenType, typename GeneratorStateType = GenType::GeneratorStateType> class GammaDistributionSplited
 {
 private:
     double x0, lambda, p;
@@ -30,6 +30,10 @@ private:
     {
         double um1 = -uniform01_exclude0(generator_gamma());
         //std::cout << "um1 " << um1 << std::endl;
+        //std::cout << "hd_lam_mult " << hd_lam_mult << std::endl;
+        //std::cout << "hd_add " << hd_add << std::endl;
+        //std::cout << "hd_mult " << hd_mult << std::endl;
+        //hd_lam_mult+=0.00001;
         return hd_mult*unsafe_lambertw1(um1*hd_lam_mult) + hd_add;
     }
 
@@ -62,8 +66,19 @@ private:
         return max_value_m1*rat(x);
     }
 
+
+    auto init_gens(auto state, bool is_exp)
+    {
+        state = generator_base.set_state(state);
+        state = generator_gamma.set_state(state);
+        state = generator_p.set_state(state);
+        if(is_exp){
+            state = generator_exp.set_state(state);
+        }
+        return state;
+    }
     
-    void init(double alpha, double beta, uint64_t seed)
+    auto init(double alpha, double beta, auto gs)
     {
         if(alpha <= 1.0 || beta <= 0.0){
             throw;
@@ -71,10 +86,8 @@ private:
         // Exp generator
         x0 = fma(alpha, beta, -beta);
         lambda = 1.0/beta;
-        GenType gs = generator_base.seed(seed);
-        gs = generator_gamma.set_state(gs);
-        gs = generator_p.set_state(gs);
-        exp_dist = ExponentialDistribution<GenType, 0>(gs, lambda);
+        gs = init_gens(gs, false);
+        exp_dist = ExponentialDistribution<GenType, 0>(lambda, gs);
         p = pow(alpha-1, alpha-1)/(exp(alpha-1)*tgamma(alpha));
         exp_lam_x0 = exp(lambda * x0);
         lam_m1 = 1/lambda;
@@ -85,7 +98,11 @@ private:
         hd_mult = -beta*a34;
         hd_add = hd_mult - 1.0;
         double tmp = 1.0+1.0/(a34*beta);
+        //std::cout << "tmp " << tmp << std::endl;
         hd_lam_mult = tmp*exp(-tmp);
+        if(hd_lam_mult == 0){
+            throw;
+        }
         // Test function x<=x0:
         left_exp_m = (1.0-a34)/(a34*beta);
         left_exp_a = alpha - 1;
@@ -110,10 +127,13 @@ private:
                 max_value_m1 = tmp;
             }
         }
-        std::cout << max_value_m1 << std::endl;
-        std::cout << x0 << std::endl;
+        //std::cout << max_value_m1 << std::endl;
+        //std::cout << x0 << std::endl;
         max_value_m1 = 1.0/max_value_m1;
+        return gs;
     }
+
+    bool exp_flag;
 public:
     uint64_t max_fails=0;
     uint64_t sum_fails=0;
@@ -122,8 +142,10 @@ public:
         //return exp_gen();
         double x;
         if(uniform01(generator_p()) < p){
+            exp_flag = true;
             return exp_gen();
         }
+        exp_flag = false;
         int fails = -1;
         do{
             x =  help_dist();
@@ -137,12 +159,33 @@ public:
         }
         return x;
     }
+
+    double get_x0()
+    {
+        return x0;
+    }
+
+    bool is_exp_phase()
+    {
+        return exp_flag;
+    }
+
     explicit GammaDistributionSplited(double alpha, double beta){
         init(alpha, beta, 0);
     }
-    GammaDistributionSplited(uint64_t seed, double alpha, double beta){
-        init(alpha, beta, seed);
+    explicit GammaDistributionSplited(double alpha, double beta, uint64_t seed){
+        GeneratorStateType state(seed);
+        init(alpha, beta, state);
     }
+    explicit GammaDistributionSplited(double alpha, double beta, GeneratorStateType state){
+        init(alpha, beta, state);
+    }
+
+    GeneratorStateType set_state(GeneratorStateType state)
+    {
+        return init_gens(state, true);
+    }
+
 };
 
 }

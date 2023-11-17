@@ -117,26 +117,26 @@ BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
     Xoshiro256mmState st;
     st.seed(1);
     ExponentialDistribution<Xoshiro256mmUniversalStable, 0> exp_u(9.8);
-    exp_u.generator.set_state(st);
+    exp_u.set_state(st);
     ExponentialDistribution<Xoshiro256mmUniversalStable, 1> exp_u_n(9.8);
-    exp_u_n.generator.set_state(st);
+    exp_u_n.set_state(st);
 #ifdef LIBKRCRAND_ENABLE_SSE2
     ExponentialDistribution<Xoshiro256mmSSE2stable, 0> exp_sse2(9.8);
-    exp_sse2.generator.set_state(st);
+    exp_sse2.set_state(st);
     ExponentialDistribution<Xoshiro256mmSSE2stable, 1> exp_sse2_n(9.8);
-    exp_sse2_n.generator.set_state(st);
+    exp_sse2_n.set_state(st);
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX2
     ExponentialDistribution<Xoshiro256mmAVX2stable, 0> exp_avx2(9.8);
-    exp_avx2.generator.set_state(st);
+    exp_avx2.set_state(st);
     ExponentialDistribution<Xoshiro256mmAVX2stable, 1> exp_avx2_n(9.8);
-    exp_avx2_n.generator.set_state(st);
+    exp_avx2_n.set_state(st);
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX512F
     ExponentialDistribution<Xoshiro256mmAVX512Fstable, 0> exp_avx512(9.8);
-    exp_avx512.generator.set_state(st);
+    exp_avx512.set_state(st);
     ExponentialDistribution<Xoshiro256mmAVX512Fstable, 1> exp_avx512_n(9.8);
-    exp_avx512_n.generator.set_state(st);
+    exp_avx512_n.set_state(st);
 #endif
     unsigned int N = 10;
     double mx = 0,my = 0,mxy = 0;

@@ -35,6 +35,7 @@ protected:
     // Fill buffer with random numbers
     virtual void fill(void) = 0;
 public:
+    typedef InternalStateClass GeneratorStateType;
     // Return next random value
     inline uint64_t operator()(void)
     {
@@ -124,6 +125,7 @@ class Xoshiro256mmUniversalStable: public Generator<Xoshiro256mmState>
         }
     }
     public:
+
     uint64_t gen(void)
     {
         uint64_t ret = gens[pos].gen();
