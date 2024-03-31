@@ -178,12 +178,14 @@ public:
     }
 
     GammaDistributionSplited(){
-        GeneratorStateType state(0);
+        using GT = GenType::GeneratorStateType;
+        GT state(0);
         init(2, 1, state);
     }
 
     explicit GammaDistributionSplited(double alpha, double beta){
-        GeneratorStateType state(0);
+        using GT = GenType::GeneratorStateType;
+        GT state(0);
         init(alpha, beta, state);
     }
 

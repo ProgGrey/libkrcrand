@@ -5,7 +5,7 @@
 
 namespace krcrand{
 
-template<typename GenType, int is_inverted, typename GeneratorStateType = GenType::GeneratorStateType> class ExponentialDistribution
+template<typename GenType, int is_inverted> class ExponentialDistribution
 {
 private:
     unsigned int pos;
