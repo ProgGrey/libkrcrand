@@ -38,7 +38,7 @@ int main()
     Xoshiro256mmUniversalStable gen1(st);
     
     double mean;
-    uint64_t N = 1000000000;
+    uint64_t N = 1000000;
     chrono::_V2::system_clock::time_point start;
     chrono::_V2::system_clock::time_point end;
     chrono::milliseconds diff = chrono::duration_cast<std::chrono::milliseconds>(end - start);

@@ -5,6 +5,10 @@
 #include "platform.hpp"
 
 namespace krcrand{
+
+const double M_E_m1 = 0.367879441171442321595523770162;//e^-1
+const double M_E_m2 = 0.135335283236612691893999494973;//e^-2
+
 inline double type_depend_mull(double a, double b){
     return a*b;
 }

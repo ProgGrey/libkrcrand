@@ -60,13 +60,13 @@ public:
         mult = -1.0/lambda;
     }
 
-    explicit ExponentialDistribution(double lambda, GeneratorStateType &state)
+    explicit ExponentialDistribution(double lambda, GenType::GeneratorStateType &state)
     {
         pos = Generator_Buff_Size;
         state = generator.set_state(state);
         mult = -1.0/lambda;
     }
-    GeneratorStateType set_state(GeneratorStateType state)
+    GenType::GeneratorStateType set_state(GenType::GeneratorStateType state)
     {
         return generator.set_state(state);
     }

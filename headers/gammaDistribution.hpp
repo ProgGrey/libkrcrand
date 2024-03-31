@@ -6,7 +6,12 @@
 
 namespace krcrand{
 
-template<typename GenType, typename GeneratorStateType = GenType::GeneratorStateType> class GammaDistributionSplited
+namespace nGammaDistributionTools
+{
+    double computate_p(double alpha);
+}
+
+template<typename GenType> class GammaDistributionSplited
 {
 private:
     double x0, lambda, p;
@@ -67,7 +72,7 @@ private:
     }
 
 
-    GeneratorStateType init_gens(GeneratorStateType state, bool is_exp)
+    auto init_gens(GenType::GeneratorStateType state, bool is_exp)
     {
         state = generator_base.set_state(state);
         state = generator_gamma.set_state(state);
@@ -78,7 +83,8 @@ private:
         return state;
     }
     
-    GeneratorStateType init(double alpha, double beta, GeneratorStateType gs)
+
+    GenType::GeneratorStateType init(double alpha, double beta, GenType::GeneratorStateType gs)
     {
         if(alpha <= 1.0 || beta <= 0.0){
             throw;
@@ -88,7 +94,8 @@ private:
         lambda = 1.0/beta;
         gs = init_gens(gs, false);
         exp_dist = ExponentialDistribution<GenType, 0>(lambda, gs);
-        p = pow(alpha-1, alpha-1)/(exp(alpha-1)*tgamma(alpha));
+        //p = pow(alpha-1, alpha-1)/(exp(alpha-1)*tgamma(alpha));
+        p = nGammaDistributionTools::computate_p(alpha);
         exp_lam_x0 = exp(lambda * x0);
         lam_m1 = 1/lambda;
         // Generator for helping dist
@@ -179,15 +186,17 @@ public:
         GeneratorStateType state(0);
         init(alpha, beta, state);
     }
+
     explicit GammaDistributionSplited(double alpha, double beta, uint64_t seed){
-        GeneratorStateType state(seed);
+        using GT = GenType::GeneratorStateType;
+        GT state(seed);
         init(alpha, beta, state);
     }
-    explicit GammaDistributionSplited(double alpha, double beta, GeneratorStateType state){
-        init(alpha, beta, state);
+    explicit GammaDistributionSplited(double alpha, double beta, GenType::GeneratorStateType &state){
+        state = init(alpha, beta, state);
     }
 
-    GeneratorStateType set_state(GeneratorStateType state)
+    GenType::GeneratorStateType set_state(GenType::GeneratorStateType state)
     {
         return init_gens(state, true);
     }
