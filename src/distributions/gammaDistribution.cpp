@@ -1,66 +1,70 @@
 #include "../../headers/generators.hpp"
 #include "../../headers/gammaDistribution.hpp"
 #include "../../headers/math.hpp"
+#include "../3rdparty/cdflib.hpp"
 #include <deque>
 #include <algorithm>
 
 using namespace krcrand;
 using namespace std;
 
-inline double stage1_fast(double alpha, uint_fast32_t ai)
-{
-    double res = 1.0;
-    for(uint_fast32_t k = 1; k < ai/2; k++){
-        res *= (alpha-1.0)*M_E_m2*(alpha-1.0)/((alpha-k)*(alpha-(ai-k)));
-    }
-    return res;
-}
-
-inline double stage1_slow(double alpha, uint_fast32_t ai)
-{
-    deque<double> deq1;
-    for(uint_fast32_t k = 1; k < ai/2; k++){
-        deq1.push_back((alpha-1.0)*M_E_m2*(alpha-1.0)/((alpha-k)*(alpha-(ai-k))));
-    }
-    sort(deq1.begin(), deq1.end());
-    while(deq1.size() > 1){
-        deque<double> deq2;
-        while(deq1.size() >= 2){
-            deq2.push_back(deq1.front()*deq1.back());
-            deq1.pop_front();
-            deq1.pop_back();
-        }
-        if(deq1.size() == 1){
-            deq2.push_back(deq1.front());
-        }
-        deq1 = deq2;
-        sort(deq1.begin(), deq1.end());
-
-    };
-    return deq1.front();
-}
 
 double nGammaDistributionTools::computate_p(double alpha)
 {
     if(alpha <= 171.0){
         double pw = pow(alpha-1, alpha*0.5-0.5);
         return pw/tgamma(alpha)/exp(alpha-1)*pw;
-    } else if(alpha > 4294967295.0){
-        return 0;
+    } else if(alpha > 137438953472.0){
+       return 0.0;
+    }else{
+        long double a = static_cast<long double>(alpha);
+        return static_cast<double>(expl((a-1.0)*logl(a-1.0)-lgammal(a)-a+1.0));
     }
-    uint_fast32_t  ai = static_cast<uint_fast32_t>(alpha);
+}
 
-    double res;
-    if(alpha < 4867){
-        res = stage1_fast(alpha, ai);
+double nGammaDistributionTools::gamma_cdf(double x, double alpha, double beta)
+{
+    int which = GAMMA_CDF;
+    double p, q;
+    double shape = alpha, rate = 1.0/beta;
+    int status;
+    double bound;
+    n3rdPartyCDF::cdfgam(&which, &p, &q, &x, &shape, &rate, &status, &bound);
+    if(status == 0){
+        return p;
     } else{
-        res = stage1_slow(alpha, ai);
+        return -INFINITY;
     }
-    
-    if(ai & 1){
-        res *= (alpha-1.0)*M_E_m2/((alpha-ai/2-1.0))*(alpha-1.0)/((alpha-ai/2));
+}
+
+double nGammaDistributionTools::gamma_qf(double p, double alpha, double beta)
+{
+    int which = GAMMA_QF;
+    double q = 1.0 - p;
+    double shape = alpha, rate = 1.0/beta;
+    int status;
+    double bound;
+    double x;
+    n3rdPartyCDF::cdfgam(&which, &p, &q, &x, &shape, &rate, &status, &bound);
+    if(status == 0){
+        return x;
     } else{
-        res *= (alpha-1.0)/((alpha-ai/2))*M_E_m1;
+        return -INFINITY;
     }
-    return pow(alpha-1.0, alpha-ai)*res/(exp(alpha-ai)*tgamma(alpha-ai+1.0));
+}
+
+double nGammaDistributionTools::gamma_pdf(double _x_, double alpha, double beta)
+{
+    long double a = alpha;
+    long double b = beta;
+    long double x = _x_;
+    if(x == 0.0){
+        return (alpha < 1.0) ? INFINITY : ((alpha == 1.0) ? (1/beta) : 0);
+    }
+    return expl((a-1.0)*logl(x)-x/b-lgammal(a)-a*logl(b));
+}
+
+double nGammaDistributionTools::gamma_pdf_fast(double x, double alpha, double beta)
+{
+    return exp((alpha-1.0)*log(x)-x/beta-lgamma(alpha)-alpha*log(beta));
 }

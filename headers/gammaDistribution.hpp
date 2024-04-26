@@ -3,13 +3,156 @@
 #include <cmath>
 #include <typeinfo>
 #include "exponentialDistribution.hpp"
+#include "linearlyApproximatedDistribution.hpp"
 
 namespace krcrand{
 
 namespace nGammaDistributionTools
 {
     double computate_p(double alpha);
+    double gamma_cdf(double x, double alpha, double beta);
+    double gamma_qf(double p, double alpha, double beta);
+    double gamma_pdf(double x, double alpha, double beta);
+    double gamma_pdf_fast(double x, double alpha, double beta);
 }
+
+
+template<typename GenType> class GammaDistribution : public LAD<Xoshiro256mm>
+{
+private:
+    double alpha, beta;
+
+    double max_val;
+    double *a = nullptr, *b = nullptr, *c = nullptr;//a b and c coefficients of 0.5*a*x^2+b*x+c
+    double *x = nullptr;
+    uint64_t n = 256;// number of intervals
+    double left_s, left_b, left_a;
+    double right_s, right_b, right_a;
+
+
+    GenType generator_test;
+
+    GenType::GeneratorStateType init_gens(GenType::GeneratorStateType state)
+    {
+        state = generator_test.set_state(state);
+        //state = generator_help.set_state(state);
+        return state;
+    }
+
+
+    virtual std::vector<double> left_max(double a, double b, double s) override
+    {
+        double d = sqrt(a*a*beta*beta*(alpha*alpha-2.0*alpha + 9.0)+4.0+4.0*a*(alpha+1.0)*beta);
+        double left = -2.0 + a*(alpha-5.0)*beta;
+        double denom = 2.0*a*(a*beta+1.0);
+        std::vector<double> maxs;
+        maxs.push_back((left + d)/denom);
+        maxs.push_back((left - d)/denom);
+        return maxs;
+    }
+
+    virtual std::vector<double> med_max(double a, double b) override
+    {
+        // Zeroes of Derivative:
+        double d = a*(alpha-2.0)*beta;
+        d = sqrt(d*d + 2.0*a*alpha*b*beta+b*b)*0.5/a;
+        double left = (a*(alpha-2.0)*beta-b)*0.5/a;
+        std::vector<double> maxs;
+        maxs.push_back(left-d);
+        maxs.push_back(left+d);
+        return maxs;
+    }
+
+    virtual std::vector<double> right_max(double a, double b, double s) override
+    {
+        std::vector<double> maxs;
+        maxs.push_back((alpha-1.0)*beta/(1.0-a*beta));
+        return maxs;
+    }
+
+
+    GenType::GeneratorStateType init(double alpha, double beta, GenType::GeneratorStateType gs)
+    {
+        this->alpha = alpha;
+        this->beta = beta;
+        if(alpha >= 1.0){
+            gs = init_lad(gs, alpha > 1.0);
+        }
+        // Init generators
+        return init_gens(gs);
+    }
+
+
+    virtual double pdf(double x) override
+    {
+        return nGammaDistributionTools::gamma_pdf(x, alpha, beta);
+    }
+
+    virtual double qf(double x) override
+    {
+        return nGammaDistributionTools::gamma_qf(x, alpha, beta);
+    }
+public:
+
+    double operator()(){
+        double result = 1;
+        double rm;
+        if(alpha >= 1.0){
+            do{
+                result = help_dist(rm);
+            } while(uniform01(generator_test()) > nGammaDistributionTools::gamma_pdf_fast(result, alpha, beta)*rm);
+        } else{
+            //Ahrens-Dieter acceptance–rejection method (Algorithm GD):
+            double u,v,w;
+            double ksi, eta;
+            do{
+                u = uniform01(generator_test());
+                v = uniform01_exclude0(generator_test());
+                w = uniform01(generator_test());
+                if(u <= M_E/(M_E+alpha)){
+                    ksi = pow(v, 1/alpha);
+                    //eta = w*v/ksi;
+                    //eta = w*pow(ksi,alpha - 1);
+                    eta = w*v/ksi;
+                }else{
+                    ksi = 1 - unsafe_log(v);
+                    eta = w*exp(-ksi);
+                }
+            } while (eta > pow(ksi,alpha-1)*exp(-ksi));
+            result = ksi*beta;
+        }
+        return result;
+    }
+
+    GammaDistribution(){
+        using GT = GenType::GeneratorStateType;
+        GT state(0);
+        init(2, 1, state);
+    }
+
+    explicit GammaDistribution(double alpha, double beta){
+        using GT = GenType::GeneratorStateType;
+        GT state(0);
+        init(alpha, beta, state);
+    }
+
+    explicit GammaDistribution(double alpha, double beta, uint64_t seed){
+        using GT = GenType::GeneratorStateType;
+        GT state(seed);
+        init(alpha, beta, state);
+    }
+    explicit GammaDistribution(double alpha, double beta, GenType::GeneratorStateType &state){
+        state = init(alpha, beta, state);
+    }
+
+    GenType::GeneratorStateType set_state(GenType::GeneratorStateType state)
+    {
+        return init_gens(state);
+    }
+
+};
+
+
 
 template<typename GenType> class GammaDistributionSplited
 {
@@ -72,7 +215,7 @@ private:
     }
 
 
-    auto init_gens(GenType::GeneratorStateType state, bool is_exp)
+    GenType::GeneratorStateType init_gens(GenType::GeneratorStateType state, bool is_exp)
     {
         state = generator_base.set_state(state);
         state = generator_gamma.set_state(state);

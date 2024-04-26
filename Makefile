@@ -1,6 +1,7 @@
-CXX=clang++
-AR=llvm-ar
-CXXFLAGS=-std=c++20 -O2 -march=native -flto -Wall -Wextra -Wpedantic
+CXX=g++
+AR=ar
+CXXFLAGS_BASE= -std=c++20 -O2 -march=native -flto
+CXXFLAGS= ${CXXFLAGS_BASE} -Wall -Wextra -Wpedantic -Wno-unused-parameter
 
 all:test speed gen gamma
 
@@ -19,8 +20,8 @@ test:libkrcrand.a tests.o
 tests.o:tests/tests.cpp headers/generators.hpp
 	$(CXX) ${CXXFLAGS} -c tests/tests.cpp -o tests.o
 
-libkrcrand.a:tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o gammaDistribution.o
-	$(AR) rc libkrcrand.a tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o gammaDistribution.o
+libkrcrand.a:tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o gammaDistribution.o cdflib.o functions.o
+	$(AR) rc libkrcrand.a tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o gammaDistribution.o cdflib.o functions.o
 
 tools.o:src/tools.cpp src/tools.hpp
 	$(CXX) ${CXXFLAGS} -c src/tools.cpp -o tools.o
@@ -40,8 +41,14 @@ math_avx512.o:src/math/avx512.cpp headers/math.hpp src/math/amd64.hpp
 Xoshiro256mm.o:src/generators/Xoshiro256mm.cpp headers/generators.hpp
 	$(CXX) ${CXXFLAGS} -c src/generators/Xoshiro256mm.cpp -o Xoshiro256mm.o
 
-gammaDistribution.o:src/distributions/gammaDistribution.cpp headers/math.hpp headers/gammaDistribution.hpp
+gammaDistribution.o:src/distributions/gammaDistribution.cpp headers/math.hpp headers/gammaDistribution.hpp headers/linearlyApproximatedDistribution.hpp
 	$(CXX) ${CXXFLAGS} -c src/distributions/gammaDistribution.cpp -o gammaDistribution.o
+
+cdflib.o:src/3rdparty/cdflib.cpp src/3rdparty/cdflib.hpp src/3rdparty/raw/cdflib.cpp src/3rdparty/raw/cdflib.hpp
+	$(CXX) ${CXXFLAGS_BASE} -c src/3rdparty/cdflib.cpp -o cdflib.o
+
+functions.o:src/math/functions.cpp headers/math.hpp
+	$(CXX) ${CXXFLAGS} -c src/math/functions.cpp -o functions.o
 
 check:
 	cppcheck --enable=all ./src/* ./headers/* ./tests/*

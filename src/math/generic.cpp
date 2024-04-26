@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
-double horner(double x, const double *coefs, uint_fast8_t n)
+inline double horner(double x, const double *coefs, uint_fast8_t n)
 {
     double val = coefs[0];
     for (uint_fast8_t k = 1; k < n; k++) {
@@ -13,7 +13,7 @@ double horner(double x, const double *coefs, uint_fast8_t n)
     return val;
 }
 
-double horner1(double x, const double* coefs, uint_fast8_t n)
+inline double horner1(double x, const double* coefs, uint_fast8_t n)
 {
     double val = x + coefs[0];
     for (uint_fast8_t k = 1; k < n; k++) {
@@ -26,13 +26,18 @@ namespace krcrand{
 
 double uniform01(uint64_t a)
 {
-    return double(a)*5.4210108624275221703e-20;
+    return double(a)*5.4210108624275221700e-20;
 }
 
 
 double uniform01_exclude0(uint64_t a)
 {
     return fma(double(a), 5.4210108624275221703e-20, 5.4210108624275221700e-20);
+}
+
+double uniform01_exclude01(uint64_t a)
+{
+    return fma(double(a), 5.4210108624275221703e-20*nextafter(static_cast<double>(1.0), 0.0), 5.4210108624275221700e-20);
 }
 
 // The code for log function below is based on algorithm from Cephes 2.8 math library by 
