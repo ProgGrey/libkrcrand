@@ -3,162 +3,169 @@
 #include <typeinfo>
 #include "generators.hpp"
 #include <cmath>
+#include <cfloat>
 #include <vector>
 
 namespace krcrand{
 
-template<typename GenType> class LAD{
+template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
     private:
-    double *a = nullptr, *b = nullptr, *c = nullptr;//a b and c coefficients of 0.5*a*x^2+b*x+c
+    double *a = nullptr, *b = nullptr, *c = nullptr;//a, b and c coefficients of 0.5*a*x^2+b*x+c.
     double *x = nullptr;
-    double left_s, left_b, left_a;
-    double right_s, right_b, right_a;
-
-    bool is_zero_derivative = false;
-
-    GenType lad_generator;
+    double M = 1;// Normalising constant
 
     protected:
-    double help_dist(double &rm)
+    
+    GenType lad_generator;
+    GenType u_generator;
+
+    virtual double left_aprox_qf(double u) = 0;
+    virtual double right_aprox_qf(double u) = 0;
+
+    double help_dist(uint8_t &pos)
     {
-        uint64_t raw = lad_generator();
-        unsigned int num = raw >> tbl_shift;
-        if((num == 0) && (is_zero_derivative)){//left approximation
-            double u = uniform01_exclude01(raw);
-            double result = unsafe_lambertw0(left_a*left_s*sqrt(u)*exp(left_a*left_s*0.5)*0.5/sqrt(left_b))*2/left_a;
-            rm = left_s*left_s/(left_b*exp(-left_a*(left_s-result))*result*(left_a*result+2.0)*max_val);
-            return result;
-        } else if(num == 255){// right approximation
-            double u = uniform01_exclude01(raw);
-            double result = right_s-unsafe_log((1.0-u)/right_b)/right_a;
-            rm = 1.0/(right_b*right_a*exp((right_s-result)*right_a)*max_val);
-            return result;
-        } else{// main approximation
-            double u = uniform01(raw);
-            double x1,x2;
-            double D = sqrt(b[num]*b[num]-2.0*a[num]*(c[num] - u));
-            x1 = (-b[num]-D)/a[num];
-            x2 = (-b[num]+D)/a[num];
-            //p2_solve(0.5*a[num], b[num], c[num] - u, x1, x2);
-            double result;
-            double x1_dist = std::max(abs(x[num] - x1), abs(x[num+1] - x1));
-            double x2_dist = std::max(abs(x[num] - x2), abs(x[num+1] - x2));
-            if(x1_dist < x2_dist){
-                result = x1;
-            } else{
-                result = x2;
+        uint64_t u_r = lad_generator();
+        double u = uniform01_exclude01(u_r);
+        //return qf(u);
+        // First byte equals number of interval
+        uint16_t p = u_r >> tbl_shift;
+        pos = p;
+        if(is_left && (p == 0)){
+            return left_aprox_qf(u);
+        } else if (is_right && (p == 255)){
+            return right_aprox_qf(u);
+        }else{
+            if(is_left){
+                p--;
             }
-            rm = 1.0/((a[num]*result+b[num])*max_val);
-            return result;
+            double cc = c[p] - u;
+            if(abs(a[p]) < DBL_EPSILON){
+                // Linear equation:
+                return -cc/b[p];
+            }else if (abs(b[p]) < DBL_EPSILON){
+                // Symetric quaratic equation
+                return sqrt(-2.0*cc/a[p]);
+            } else if(abs(c[p]) < DBL_EPSILON){
+                // Incomplete quadratic equation
+                return -2.0*b[p]/a[p];
+            }
+            double sd = sqrt(b[p]*b[p] - 2 * a[p]*cc);
+            // This root is more probable due to properties of used approximation:
+            double xx = (-b[p]+sd)/a[p];
+            if((x[p] <= xx) && (xx <= x[p+1])){
+                return xx;
+            } else{
+                return (-b[p]-sd)/a[p];
+            }
         }
     }
 
-    double max_val;
-    // Points where maximum of f(x)/g(x) is possible.
-    virtual std::vector<double> left_max(double a, double b, double s) = 0;
-    virtual std::vector<double> med_max(double a, double b) = 0;
-    virtual std::vector<double> right_max(double a, double b, double s)  = 0;
+    virtual double left_aprox_pdf(double x) = 0;
+    virtual double right_aprox_pdf(double x) = 0;
 
-    GenType::GeneratorStateType init_lad(GenType::GeneratorStateType gs, bool is_zero_derivative)
+    double pdf_approx(double x, uint8_t pos)
     {
-        this->is_zero_derivative = is_zero_derivative;
-        //build tables
-        double p = 1.0/tbl_size;
-        x = new double[tbl_size];
-        double *yl = new double[tbl_size];
-        for(unsigned int k = 0; k < tbl_size; k++){
-            
-            x[k] = qf(1.0/tbl_size*k);
-            yl[k] = pdf(x[k]);
+        if(is_left && (pos == 0)){
+            return left_aprox_pdf(x);
+        } else if (is_right && (pos == 255)){
+            return right_aprox_pdf(x);
+        } else {
+            uint8_t p = (is_left ? pos - 1 : pos);
+            return a[p]*x + b[p];
         }
-        double *yr =  new double[tbl_size];
-        //Fix squares
-        for(unsigned int k = 0; k < tbl_size-1; k++){
-            double h = (yl[k] + yl[k+1])*0.5+p/(x[k]-x[k+1]);
-            double m = std::min(std::min(h, yl[k]),yl[k+1]);
-            yr[k] = yl[k+1] - m;
-            yl[k] -= m;
-            if(h != m){
-                //angle correction
-                if(yr[k] > yl[k]){
-                    h = yr[k]-yl[k]-2*p/(x[k+1]-x[k]);
-                    yr[k] -= h;
-                } else{
-                    h = yl[k] - yr[k]+2*p/(x[k+1]-x[k]);
-                    yl[k] -= h;
-                }
+    }
+
+    // Points where maximum of f(x)/g(x) is possible.
+    virtual double left_max(double x) = 0;
+    virtual double med_max(double x1, double x2, double a, double b) = 0;
+    virtual double right_max(double x) = 0;
+
+    GenType::GeneratorStateType init_lad(GenType::GeneratorStateType gs)
+    {
+        a = new double[tbl_size];
+        b = new double[tbl_size];
+        c = new double[tbl_size];
+        x = new double[tbl_size + 1];
+        int shift = (is_left ? 1 : 0);
+        double x2 = qf(static_cast<double>(shift)/256.0);
+        for(unsigned  int k = 0; k < tbl_size; k++){
+            /* Linear aproximation g(x) of PDF f(x) and quadratic aproximation G(x) of CDF F(X) with folowing properties:
+            1) int_a^b f(x) = int_a^b g(x)
+            2) max|f(x) - g(x)| -> min for all x in [a,b] with property 1)
+            3) F(a) = G(a)
+            4) F(b) = G(b)
+            The following solution for a and b was obtained by condition like Chebyshev alterance theorem.
+            //*/
+            double x1 = x2;
+            x2 = qf(static_cast<double>(k + shift + 1)/256.0);
+            double f1 = pdf(x1);
+            double f2 = pdf(x2);
+            a[k] = (f2-f1)/(x2-x1);
+            b[k] = 1.0/256.0/(x2-x1) - a[k]*(x1+x2)*0.5;
+            // Fix negative density
+            if(a[k]*x1 + b[k] < 0.0){
+                double tmp = (x1-x2);
+                tmp *= tmp;
+                a[k] = 2.0/256.0/tmp;
+                b[k] = -2.0/256.0*x1/tmp;
+            } else if(a[k]*x2 + b[k] < 0.0){
+                double tmp = (x1-x2);
+                tmp *= tmp;
+                a[k] = -2.0/256.0/tmp;
+                b[k] = 2.0/256.0*x1/tmp;
             }
+            c[k] = static_cast<double>(k + shift)/256.0 - 0.5*a[k]*x1*x1 - b[k]*x1;
+            x[k] = x1;
+            M = std::max(M, f1/(a[k]*x1+b[k]));
+            M = std::max(M, f2/(a[k]*x2+b[k]));
+            M = std::max(M, med_max(x1, x2, a[k], b[k]));
         }
-        // Fix square for zero interval
-        //compute constants
-        a = new double[tbl_size-1];
-        b = new double[tbl_size-1];
-        c = new double[tbl_size-1];
-        for(unsigned int k = 0; k < tbl_size-1; k++){
-            a[k] = (yl[k]-yr[k])/(x[k]-x[k+1]);
-            b[k] = (x[k]*yr[k]-yl[k]*x[k+1])/(x[k]-x[k+1]);
-            c[k] = p*k-0.5*a[k]*x[k]*x[k]-b[k]*x[k];
+        x[tbl_size] = x2;
+        if(is_left){
+            M = std::max(M, left_max(x[0]));
         }
-        // free memory
-        delete [] yl;
-        delete [] yr;
-        // Compute constants for tails
-        if(is_zero_derivative){
-            left_s = x[1];
-            left_b = p;
-            left_a = (pdf(x[1])*x[1]-2.0*p)/(x[1]*p);
+        if(is_right){
+            M = std::max(M, right_max(x[0]));
         }
-        right_s = x[tbl_size-1];
-        right_b = p;
-        right_a = pdf(x[tbl_size-1])*tbl_size;
-        //Compute maximum value
-        max_val = 1.0;
-        for(unsigned int k = (!is_zero_derivative ? 0 : 1); k < tbl_size-1; k++){
-            std::vector<double> x_cands = med_max(a[k], b[k]);
-            double pg;
-            for(double val : x_cands){
-                if(( val >= x[k]) && ( val <= x[k+1])){
-                    pg = pdf(val);
-                    //max_val = std::max(max_val, pg/(a[k]*val+b[k]));
-                }
-            }
-            pg = pdf(x[k]);
-            max_val = std::max(max_val, pg/(a[k]*x[k]+b[k]));
-            pg = pdf(x[k+1]);
-            max_val = std::max(max_val, pg/(a[k]*x[k+1]+b[k]));
+        
+        /*
+        std::cout << 'M' << M << '\n';
+        std::cout.precision(16);
+        for(int  k = 0; k < tbl_size; k++){
+            std::cout << a[k] << ',';
         }
-        //left tail
-        if(is_zero_derivative){
-            std::vector<double> x_cands = left_max(left_a, left_b, left_s);
-            // pdf of aproximation distribution in 0ed interval
-            auto appr = [=, this](double x){
-                return left_b*exp((x-left_s)*left_a)*x*(left_a*x+2.0)/(left_s*left_s);
-            };
-            for(double val : x_cands){
-                double pg = pdf(val);
-                if((val > 0.0)&& (val <= x[1])){
-                    max_val = std::max(max_val, pg/appr(val));
-                }
-            }
+        std::cout << '\n';
+        for(int  k = 0; k < tbl_size; k++){
+            std::cout << b[k] << ',';
         }
-        // right tail
-        std::vector<double> x_cands = right_max(right_a, right_b, right_s);
-        for(double val : x_cands){
-            if(val > x[tbl_size-1]){
-                double pg = pdf(val);
-                max_val = std::max(max_val, pg/(right_b*right_a*exp(right_a*right_s-right_a*val)));
-            }
+        std::cout << '\n';
+        for(int  k = 0; k < tbl_size; k++){
+            std::cout << c[k] << ',';
         }
-        // Init generator
-        return lad_generator.set_state(gs);
+        std::cout << '\n';//*/
+        gs = lad_generator.set_state(gs);
+        return u_generator.set_state(gs);
     }
 
     public:
-    const unsigned int tbl_size = 256;
+    const unsigned int tbl_size = 256 - (is_left ? 1 : 0) - (is_right ? 1 : 0);
     const unsigned int tbl_shift = 56;//64-log2(tbl_size)
 
     virtual double pdf(double x) = 0;
+    virtual double pdf_fast(double x) = 0;
     virtual double qf(double x) = 0;
+
+    double ladgen(){
+        //return qf(uniform01_exclude01(lad_generator()));
+        double x,u;
+        uint8_t pos;
+        do{
+            x = help_dist(pos);
+            u = uniform01(u_generator());
+        } while(pdf_fast(x)/(M*pdf_approx(x, pos)) < u);
+        return x;
+        //return(qf(uniform01_exclude01(lad_generator())));
+    }
 
     ~LAD()
     {
