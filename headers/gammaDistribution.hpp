@@ -216,7 +216,7 @@ private:
         this->alpha = alpha;
         this->beta = beta;
         //TODO code for lambda, p, s computations
-        lambda = 1;
+        double lambda = 1;
         p = 0;
         s = 0;
         exp_phase = ExponentialDistribution<GenType>(lambda, gs);
@@ -246,24 +246,24 @@ public:
         return nGammaDistributionTools::gamma_qf(x, alpha, beta);
     }
 
-    GammaDistribution(){
+    GammaDistributionSplited(){
         using GT = GenType::GeneratorStateType;
         GT state(0);
         init(2, 1, state);
     }
 
-    explicit GammaDistribution(double alpha, double beta){
+    explicit GammaDistributionSplited(double alpha, double beta){
         using GT = GenType::GeneratorStateType;
         GT state(0);
         init(alpha, beta, state);
     }
 
-    explicit GammaDistribution(double alpha, double beta, uint64_t seed){
+    explicit GammaDistributionSplited(double alpha, double beta, uint64_t seed){
         using GT = GenType::GeneratorStateType;
         GT state(seed);
         init(alpha, beta, state);
     }
-    explicit GammaDistribution(double alpha, double beta, GenType::GeneratorStateType &state){
+    explicit GammaDistributionSplited(double alpha, double beta, GenType::GeneratorStateType &state){
         state = init(alpha, beta, state);
     }
 
