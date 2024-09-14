@@ -1,3 +1,4 @@
+#pragma once
 #include "platform.hpp"
 #include "math.hpp"
 #include <cmath>
@@ -17,111 +18,86 @@ namespace nGammaDistributionTools
 }
 
 
-template<typename GenType> class GammaDistribution : public LAD<Xoshiro256mm>
+template<typename GenType>
+class GammaDistribution final : public LAD<GenType, true, true> 
 {
+    using LAD<GenType, true, true>::LAD;
 private:
     double alpha, beta;
-
-    double max_val;
-    double *a = nullptr, *b = nullptr, *c = nullptr;//a b and c coefficients of 0.5*a*x^2+b*x+c
-    double *x = nullptr;
-    uint64_t n = 256;// number of intervals
-    double left_s, left_b, left_a;
-    double right_s, right_b, right_a;
-
-
-    GenType generator_test;
-
-    GenType::GeneratorStateType init_gens(GenType::GeneratorStateType state)
+    
+    virtual double left_aprox_qf(double u) override
     {
-        state = generator_test.set_state(state);
-        //state = generator_help.set_state(state);
-        return state;
+        return qf(u);
+    }
+    virtual double right_aprox_qf(double u) override
+    {
+        return qf(u);
     }
 
-
-    virtual std::vector<double> left_max(double a, double b, double s) override
+    virtual double left_max(double x) override
     {
-        double d = sqrt(a*a*beta*beta*(alpha*alpha-2.0*alpha + 9.0)+4.0+4.0*a*(alpha+1.0)*beta);
-        double left = -2.0 + a*(alpha-5.0)*beta;
-        double denom = 2.0*a*(a*beta+1.0);
-        std::vector<double> maxs;
-        maxs.push_back((left + d)/denom);
-        maxs.push_back((left - d)/denom);
-        return maxs;
+        return 1;
     }
 
-    virtual std::vector<double> med_max(double a, double b) override
+    virtual double med_max(double x1, double x2, double a, double b) override
     {
-        // Zeroes of Derivative:
-        double d = a*(alpha-2.0)*beta;
-        d = sqrt(d*d + 2.0*a*alpha*b*beta+b*b)*0.5/a;
-        double left = (a*(alpha-2.0)*beta-b)*0.5/a;
-        std::vector<double> maxs;
-        maxs.push_back(left-d);
-        maxs.push_back(left+d);
-        return maxs;
+        double xc1, xc2;
+        p2_solve(a, b-a*beta*(alpha - 2), b*beta*(1.0-alpha),xc1, xc2);
+        if((x1 < xc1 && xc1 < x2) && (x1 < xc2 && xc2 < x2)){
+            return std::max<double>(pdf(xc1)/(a*xc1+b), pdf(xc2)/(a*xc2+b));
+        } else if (x1 < xc1 && xc1 < x2){
+            return pdf(xc1)/(a*xc1+b);
+        } else if (x1 < xc2 && xc2 < x2){
+            return pdf(xc2)/(a*xc2+b);
+        } else{
+            double xc = (x2+x1)*0.5;
+            return pdf(xc)/(a*xc+b);
+        }//*/
+        return 1;
     }
 
-    virtual std::vector<double> right_max(double a, double b, double s) override
+    virtual double right_max(double x) override
     {
-        std::vector<double> maxs;
-        maxs.push_back((alpha-1.0)*beta/(1.0-a*beta));
-        return maxs;
+        return 1;
     }
 
+    virtual double left_aprox_pdf(double x)
+    {
+        return pdf_fast(x);
+    }
+    virtual double right_aprox_pdf(double x)
+    {
+        return pdf_fast(x);
+    }
 
     GenType::GeneratorStateType init(double alpha, double beta, GenType::GeneratorStateType gs)
     {
         this->alpha = alpha;
         this->beta = beta;
         if(alpha >= 1.0){
-            gs = init_lad(gs, alpha > 1.0);
+            return this->init_lad(gs);
+        }else{
+            gs = this->lad_generator.set_state(gs);
+            return this->u_generator.set_state(gs);
         }
-        // Init generators
-        return init_gens(gs);
     }
 
+
+public:
 
     virtual double pdf(double x) override
     {
         return nGammaDistributionTools::gamma_pdf(x, alpha, beta);
     }
 
+    virtual double pdf_fast(double x) override
+    {
+        return nGammaDistributionTools::gamma_pdf_fast(x, alpha, beta);
+    }
+
     virtual double qf(double x) override
     {
         return nGammaDistributionTools::gamma_qf(x, alpha, beta);
-    }
-public:
-
-    double operator()(){
-        double result = 1;
-        double rm;
-        if(alpha >= 1.0){
-            do{
-                result = help_dist(rm);
-            } while(uniform01(generator_test()) > nGammaDistributionTools::gamma_pdf_fast(result, alpha, beta)*rm);
-        } else{
-            //Ahrens-Dieter acceptance–rejection method (Algorithm GD):
-            double u,v,w;
-            double ksi, eta;
-            do{
-                u = uniform01(generator_test());
-                v = uniform01_exclude0(generator_test());
-                w = uniform01(generator_test());
-                if(u <= M_E/(M_E+alpha)){
-                    ksi = pow(v, 1/alpha);
-                    //eta = w*v/ksi;
-                    //eta = w*pow(ksi,alpha - 1);
-                    eta = w*v/ksi;
-                }else{
-                    ksi = 1 - unsafe_log(v);
-                    eta = w*exp(-ksi);
-                }
-            } while (eta > pow(ksi,alpha-1)*exp(-ksi));
-            result = ksi*beta;
-        }
-        return result;
     }
 
     GammaDistribution(){
@@ -150,202 +126,183 @@ public:
         return init_gens(state);
     }
 
+    int counter = 0;
+    double operator()(void)
+    {
+        if(alpha >= 1.0){
+            return this->ladgen();
+        } else{
+            //GS algorithm. See J. H. Ahrens; U. Dieter. (1974). Computer methods for sampling from gamma, beta, poisson and bionomial distributions. , 12(3), 223–246. doi:10.1007/bf02293108
+            double x;
+            double t;
+            double v;
+            do{
+                counter++;
+                double u = uniform01_exclude0(this->u_generator());
+                double b = (M_E + alpha)/M_E;
+                double p = b*u;
+                v = uniform01_exclude0(this->lad_generator());
+                if(p > 1){
+                    x = -log((b-p)/alpha);
+                    t = pow(x,alpha - 1.0);
+                } else {
+                    x = pow(p, 1.0/alpha);
+                    t = exp(-x);
+                }
+            }while(t < v);
+            return x*beta;
+            //*/
+        }
+    }
 };
 
-
-
-template<typename GenType> class GammaDistributionSplited
+template<typename GenType>
+class GammaDistributionSplited final : public LAD<GenType, true, true> 
 {
+    using LAD<GenType, true, true>::LAD;
 private:
-    double x0, lambda, p;
-    // Shifted exp dist:
-    double exp_lam_x0, lam_m1;
+    double alpha, beta;
+    double p, s;
+    ExponentialDistribution<GenType> exp_phase;
+    GenType split_gen;
 
-    GenType generator_base;
-    GenType generator_exp;
-    ExponentialDistribution<GenType, 0> exp_dist;
-    GenType generator_gamma;
-    GenType generator_p;
-    double exp_gen()
+    virtual double left_aprox_qf(double u) override
     {
-        return exp_dist() + x0;
-        return x0-lam_m1*log(uniform01_exclude0(generator_exp()));
-        return x0-lam_m1*log(exp_lam_x0 - uniform01_exclude0(generator_exp()));
+        return qf(u);
     }
-    // for helping dist
-    double hd_mult, hd_lam_mult, hd_add;
-    double help_dist()
+    virtual double right_aprox_qf(double u) override
     {
-        double um1 = -uniform01_exclude0(generator_gamma());
-        //std::cout << "um1 " << um1 << std::endl;
-        //std::cout << "hd_lam_mult " << hd_lam_mult << std::endl;
-        //std::cout << "hd_add " << hd_add << std::endl;
-        //std::cout << "hd_mult " << hd_mult << std::endl;
-        //hd_lam_mult+=0.00001;
-        return hd_mult*unsafe_lambertw1(um1*hd_lam_mult) + hd_add;
+        return qf(u);
     }
 
-    double left_exp_m, left_exp_a;
-    double left_mull;
-    double a_subs_2;
-    double a_subs_1, right_x_mull, right_x_add, right_mull;
-    double rat_left(double x)
+    virtual double left_max(double x) override
     {
-        double e = exp(fma(left_exp_m,x,left_exp_a));
-        return left_mull*e*pow(x,a_subs_1)/(x+1.0);
+        return 1;
     }
-    double rat_right(double x)
+
+    virtual double med_max(double x1, double x2, double a, double b) override
     {
-        double e = exp(fma(left_exp_m,x,left_exp_a));
-        return e*right_mull*fma(pow(x, a_subs_1),right_x_mull, right_x_add)/(x+1.0);
-    }
-    double rat(double x)
-    {
-        if(x <= x0){
-            return rat_left(x);
+        double xc1, xc2;
+        p2_solve(a, b-a*beta*(alpha - 2), b*beta*(1.0-alpha),xc1, xc2);
+        if((x1 < xc1 && xc1 < x2) && (x1 < xc2 && xc2 < x2)){
+            return std::max<double>(pdf(xc1)/(a*xc1+b), pdf(xc2)/(a*xc2+b));
+        } else if (x1 < xc1 && xc1 < x2){
+            return pdf(xc1)/(a*xc1+b);
+        } else if (x1 < xc2 && xc2 < x2){
+            return pdf(xc2)/(a*xc2+b);
         } else{
-            return rat_right(x);
-        }
-    }
-    
-    double max_value_m1;
-    inline double test(double x)
-    {
-        return max_value_m1*rat(x);
+            double xc = (x2+x1)*0.5;
+            return pdf(xc)/(a*xc+b);
+        }//*/
+        return 1;
     }
 
-
-    GenType::GeneratorStateType init_gens(GenType::GeneratorStateType state, bool is_exp)
+    virtual double right_max(double x) override
     {
-        state = generator_base.set_state(state);
-        state = generator_gamma.set_state(state);
-        state = generator_p.set_state(state);
-        if(is_exp){
-            state = generator_exp.set_state(state);
-        }
-        return state;
+        return 1;
     }
-    
+
+    virtual double left_aprox_pdf(double x)
+    {
+        return pdf_fast(x);
+    }
+    virtual double right_aprox_pdf(double x)
+    {
+        return pdf_fast(x);
+    }
 
     GenType::GeneratorStateType init(double alpha, double beta, GenType::GeneratorStateType gs)
     {
-        if(alpha <= 1.0 || beta <= 0.0){
-            throw;
+        this->alpha = alpha;
+        this->beta = beta;
+        //TODO code for lambda, p, s computations
+        lambda = 1;
+        p = 0;
+        s = 0;
+        exp_phase = ExponentialDistribution<GenType>(lambda, gs);
+        if(alpha >= 1.0){
+            return this->init_lad(gs);
+        }else{
+            gs = this->lad_generator.set_state(gs);
+            return this->u_generator.set_state(gs);
         }
-        // Exp generator
-        x0 = fma(alpha, beta, -beta);
-        lambda = 1.0/beta;
-        gs = init_gens(gs, false);
-        exp_dist = ExponentialDistribution<GenType, 0>(lambda, gs);
-        //p = pow(alpha-1, alpha-1)/(exp(alpha-1)*tgamma(alpha));
-        p = nGammaDistributionTools::computate_p(alpha);
-        exp_lam_x0 = exp(lambda * x0);
-        lam_m1 = 1/lambda;
-        // Generator for helping dist
-        double sqsqa = sqrt(sqrt(alpha));
-        double sqa = sqrt(alpha);
-        double a34 = sqa*sqsqa;
-        hd_mult = -beta*a34;
-        hd_add = hd_mult - 1.0;
-        double tmp = 1.0+1.0/(a34*beta);
-        //std::cout << "tmp " << tmp << std::endl;
-        hd_lam_mult = tmp*exp(-tmp);
-        if(hd_lam_mult == 0){
-            throw;
-        }
-        // Test function x<=x0:
-        left_exp_m = (1.0-a34)/(a34*beta);
-        left_exp_a = alpha - 1;
-        a_subs_2 = alpha - 2;
-        left_mull = sqa*((sqsqa*alpha-sqsqa)*pow(beta,1.0-alpha)+alpha*pow(beta,2.0-alpha)*(alpha-1.0))/
-                    (exp(alpha - 1.0)*tgamma(alpha)*(alpha-1.0)-pow(alpha - 1.0, alpha));
-        //Test function x > x0
-        right_mull = sqa*fma(alpha,beta, sqsqa)/(exp(alpha - 1.0)*tgamma(alpha)-pow(alpha - 1.0, alpha - 1.0));
-        a_subs_1 = alpha - 1.0;
-        right_x_mull = pow(beta, 1.0-alpha);
-        right_x_add = -pow(alpha - 1.0, alpha - 1.0);
-        // Find maximum
-        max_value_m1 = rat_left(0);
-        tmp = rat_left(x0);
-        if(tmp > max_value_m1){
-            max_value_m1 = tmp;
-        }
-        tmp = (1.0+sqa*sqsqa*(alpha*beta-(2.0*beta+1.0)) + sqrt(1 + ((beta*(alpha*beta - 4.0*beta + 2.0)*alpha - 2.0*sqsqa*beta + (4.0*beta)*beta + 1.0)*alpha - 2.0*sqsqa)*sqa))/(2*(sqa*sqsqa-1.0));
-        if(tmp > 0 && tmp < x0){
-            tmp = rat_left(tmp);
-            if(tmp > max_value_m1){
-                max_value_m1 = tmp;
-            }
-        }
-        //std::cout << max_value_m1 << std::endl;
-        //std::cout << x0 << std::endl;
-        max_value_m1 = 1.0/max_value_m1;
-        return gs;
     }
 
-    bool exp_flag;
+
 public:
-    uint64_t max_fails=0;
-    uint64_t sum_fails=0;
-    double operator()(){
-        //return help_dist();
-        //return exp_gen();
-        double x;
-        if(uniform01(generator_p()) < p){
-            exp_flag = true;
-            return exp_gen();
-        }
-        exp_flag = false;
-        int fails = -1;
-        do{
-            x =  help_dist();
-            fails++;
-           //std::cout << "hd: " <<  x << std::endl;
-        }while(test(x) < uniform01(generator_base()));
-        //std::cout << "x: " <<  x << std::endl;
-        sum_fails += fails;
-        if(max_fails < fails){
-            max_fails = fails;
-        }
-        return x;
-    }
 
-    double get_x0()
+    virtual double pdf(double x) override
     {
-        return x0;
+        return nGammaDistributionTools::gamma_pdf(x, alpha, beta);
     }
 
-    bool is_exp_phase()
+    virtual double pdf_fast(double x) override
     {
-        return exp_flag;
+        return nGammaDistributionTools::gamma_pdf_fast(x, alpha, beta);
     }
 
-    GammaDistributionSplited(){
+    virtual double qf(double x) override
+    {
+        return nGammaDistributionTools::gamma_qf(x, alpha, beta);
+    }
+
+    GammaDistribution(){
         using GT = GenType::GeneratorStateType;
         GT state(0);
         init(2, 1, state);
     }
 
-    explicit GammaDistributionSplited(double alpha, double beta){
+    explicit GammaDistribution(double alpha, double beta){
         using GT = GenType::GeneratorStateType;
         GT state(0);
         init(alpha, beta, state);
     }
 
-    explicit GammaDistributionSplited(double alpha, double beta, uint64_t seed){
+    explicit GammaDistribution(double alpha, double beta, uint64_t seed){
         using GT = GenType::GeneratorStateType;
         GT state(seed);
         init(alpha, beta, state);
     }
-    explicit GammaDistributionSplited(double alpha, double beta, GenType::GeneratorStateType &state){
+    explicit GammaDistribution(double alpha, double beta, GenType::GeneratorStateType &state){
         state = init(alpha, beta, state);
     }
 
     GenType::GeneratorStateType set_state(GenType::GeneratorStateType state)
     {
-        return init_gens(state, true);
+        return init_gens(state);
     }
 
+    int counter = 0;
+    double operator()(void)
+    {
+        if(uniform01(split_gen()) < p){
+            return s + exp_phase();    
+        }
+        if(alpha >= 1.0){
+            return this->ladgen();
+        } else{
+            //GS algorithm. See J. H. Ahrens; U. Dieter. (1974). Computer methods for sampling from gamma, beta, poisson and bionomial distributions. , 12(3), 223–246. doi:10.1007/bf02293108
+            double x;
+            double t;
+            double v;
+            do{
+                counter++;
+                double u = uniform01_exclude0(this->u_generator());
+                double b = (M_E + alpha)/M_E;
+                double p = b*u;
+                v = uniform01_exclude0(this->lad_generator());
+                if(p > 1){
+                    x = -log((b-p)/alpha);
+                    t = pow(x,alpha - 1.0);
+                } else {
+                    x = pow(p, 1.0/alpha);
+                    t = exp(-x);
+                }
+            }while(t < v);
+            return x*beta;
+            //*/
+        }
+    }
 };
 
 }
