@@ -12,6 +12,8 @@ const double M_E_m2 = 0.135335283236612691893999494973;//e^-2
 // solve the equation a*x^3+b*x^2+c*x+d=0
 // @return number of real roots.
 int p3_solve(double a, double b, double c, double d, double &x1, double &x2, double &x3);
+int p3_solve_cardano(long double const &a, long double const &b, long double const &c, long double const &d, double &x1, double &x2, double &x3);
+int p3_solve_modern(long double const &a, long double const &b, long double const &c, long double const &d, double &x1, double &x2, double &x3);
 
 // solve the equation a*x^2+b*x+c=0
 // @return number of real roots.
