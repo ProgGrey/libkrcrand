@@ -99,6 +99,23 @@ double unsafe_log(double x)
 }
 
 
+double unsafe_p2_half_solve(double a, double b, double c, double xl, double xr)
+{
+    if(abs(a) < DBL_EPSILON){
+        // Linear equation:
+        return -c/b;
+    }
+    double sd = sqrt(b*b - 2 * a*c);
+    // This root is more probable due to properties of used approximation:
+    double xx = (-b+sd)/a;
+    if((xl <= xx) && (xx <= xr)){
+        return xx;
+    } else{
+        return (-b-sd)/a;
+    }
+}
+
+
 /* The code below for LambertW function is based on Darko Veberic realization of method from
   Toshio Fukushima, "Precise and fast computation of Lambert W-functions without transcendental 
   function evaluations", J. Comp. Appl. Math. 244 (2013) 77-89. The author distributes it under 

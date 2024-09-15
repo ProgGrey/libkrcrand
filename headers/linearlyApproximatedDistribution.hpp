@@ -40,6 +40,7 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
                 p--;
             }
             double cc = c[p] - u;
+            /*
             if(abs(a[p]) < DBL_EPSILON){
                 // Linear equation:
                 return -cc/b[p];
@@ -58,6 +59,8 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             } else{
                 return (-b[p]-sd)/a[p];
             }
+            //*/
+            return unsafe_p2_half_solve(a[p], b[p], cc, x[p], x[p+1]);
         }
     }
 

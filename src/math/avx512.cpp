@@ -25,11 +25,17 @@ using namespace krcrand;
 
 #define le_d(a,b) _mm512_cmp_pd_mask(a, b, _CMP_LE_OS)
 #define lt_d(a,b) _mm512_cmp_pd_mask(a, b, _CMP_LT_OS)
+
 #define notand_d(a,b) _mm512_andnot_pd(a, b)
 #define and_d(a,b) _mm512_and_pd(a, b)
 #define or_d(a,b) _mm512_or_pd(a,b)
+#define xor_d(a,b) _mm512_xor_pd(a,b)
 #define and_i(a,b) _mm512_and_si512(a,b)
 #define or_i(a,b) _mm512_or_si512(a,b)
+
+#define sqrt_d(a) _mm512_sqrt_pd(a)
+#define and_cond(a,b) ((a)&(b))
+#define testc(a,b) ((a)==(b))
 
 #define mov_mask_d(flag, if_true, if_false) _mm512_mask_mov_pd (if_false, flag, if_true)
 
@@ -58,5 +64,6 @@ horner1_function(horner1_avx512)
 namespace krcrand{
 uniform01_exclude0_function(uniform01_exclude0)
 log_function(unsafe_log, horner_avx512, horner1_avx512)
+p2_half_function(unsafe_p2_half_solve)
 }
 #endif

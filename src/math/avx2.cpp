@@ -29,12 +29,17 @@ using namespace krcrand;
 
 #define le_d(a,b) _mm256_cmp_pd (a, b, _CMP_LE_OS)
 #define lt_d(a,b) _mm256_cmp_pd (a, b, _CMP_LT_OS)
+#define and_cond(a, b) _mm256_and_pd(a, b)
+#define testc(a,b) _mm256_testc_pd(a,b)
+
 #define notand_d(a,b) _mm256_andnot_pd(a, b)
 #define and_d(a,b) _mm256_and_pd(a, b)
 #define or_d(a,b) _mm256_or_pd(a,b)
 #define and_i(a,b) _mm256_and_si256(a,b)
 #define or_i(a,b) _mm256_or_si256(a,b)
+#define xor_d(a,b) _mm256_xor_pd(a,b)
 
+#define sqrt_d(a) _mm256_sqrt_pd(a)
 
 #include "amd64.hpp"
 
@@ -65,6 +70,7 @@ horner1_function(horner1_avx2)
 namespace krcrand{
 uniform01_exclude0_function(uniform01_exclude0)
 log_function(unsafe_log, horner_avx2, horner1_avx2)
+p2_half_function(unsafe_p2_half_solve)
 }
 
 #endif

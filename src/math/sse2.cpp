@@ -30,11 +30,16 @@ using namespace krcrand;
 
 #define le_d(a,b) _mm_cmple_pd(a, b)
 #define lt_d(a,b) _mm_cmplt_pd(a, b)
+#define and_cond(a, b) _mm_and_pd(a, b)
+
 #define notand_d(a,b) _mm_andnot_pd(a, b)
 #define and_d(a,b) _mm_and_pd(a, b)
 #define or_d(a,b) _mm_or_pd(a,b)
 #define and_i(a,b) _mm_and_si128(a,b)
 #define or_i(a,b) _mm_or_si128(a,b)
+#define xor_d(a,b) _mm_xor_pd(a,b)
+
+#define sqrt_d(a) _mm_sqrt_pd(a)
 
 #include "amd64.hpp"
 
@@ -63,6 +68,23 @@ __m128d u64_to_d_sse2(__m128i x){
 #define  conv_u_to_d(x) u64_to_d_sse2(x)
 #endif
 
+#ifdef LIBKRCRAND_ENABLE_SSE4_1
+#define testc(a,b) _mm_testc_si128(_mm_castpd_si128(a),_mm_castpd_si128(b))
+#else
+int testc_sse2_slow(__m128d a, __m128d b){
+    alignas(16) double ar[2];
+    alignas(16) double br[2];
+    _mm_store_pd(ar, a);
+    _mm_store_pd(br, b);
+    if((ar[0] == br[0]) && (ar[1] == br[1])){
+        return 1;
+    } else{
+        return 0;
+    }
+}
+
+#define testc(a,b) testc_sse2_slow(a,b)
+#endif
 
 
 horner_function(horner_sse2)
@@ -70,5 +92,7 @@ horner1_function(horner1_sse2)
 namespace krcrand{
 uniform01_exclude0_function(uniform01_exclude0)
 log_function(unsafe_log, horner_sse2, horner1_sse2)
+
+p2_half_function(unsafe_p2_half_solve)
 }
 #endif
