@@ -12,7 +12,7 @@ namespace krcrand{
 template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
     private:
     double *a = nullptr, *b = nullptr, *c = nullptr;//a, b and c coefficients of 0.5*a*x^2+b*x+c.
-    double *x = nullptr;
+    double *x = nullptr, *y = nullptr;
     double M = 1;// Normalising constant
 
     protected:
@@ -80,6 +80,13 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
     virtual double left_max(double x) = 0;
     virtual double med_max(double x1, double x2, double a, double b) = 0;
     virtual double right_max(double x) = 0;
+    virtual double pdf_min(double x1, double x2, uint8_t p) = 0;
+
+    GenType::GeneratorStateType init_gens(GenType::GeneratorStateType gs)
+    {
+        gs = lad_generator.set_state(gs);
+        return u_generator.set_state(gs);
+    }
 
     GenType::GeneratorStateType init_lad(GenType::GeneratorStateType gs)
     {
@@ -87,8 +94,12 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
         b = new double[tbl_size];
         c = new double[tbl_size];
         x = new double[tbl_size + 1];
+        y = new double[256];
         int shift = (is_left ? 1 : 0);
         double x2 = qf(static_cast<double>(shift)/256.0);
+        if(is_left){
+            y[0] = pdf_min(qf(0.0), x2, 0);
+        }
         for(unsigned  int k = 0; k < tbl_size; k++){
             /* Linear aproximation g(x) of PDF f(x) and quadratic aproximation G(x) of CDF F(X) with folowing properties:
             1) int_a^b f(x) = int_a^b g(x)
@@ -117,11 +128,13 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             }
             c[k] = static_cast<double>(k + shift)/256.0 - 0.5*a[k]*x1*x1 - b[k]*x1;
             x[k] = x1;
+            y[k + shift] = pdf_min(x1, x2, k + shift);
             M = std::max(M, f1/(a[k]*x1+b[k]));
             M = std::max(M, f2/(a[k]*x2+b[k]));
             M = std::max(M, med_max(x1, x2, a[k], b[k]));
         }
         x[tbl_size] = x2;
+        y[255] = pdf_min(x2, qf(1), 255);
         if(is_left){
             M = std::max(M, left_max(x[0]));
         }
@@ -144,8 +157,7 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             std::cout << c[k] << ',';
         }
         std::cout << '\n';//*/
-        gs = lad_generator.set_state(gs);
-        return u_generator.set_state(gs);
+        return init_gens(gs);
     }
 
     public:
@@ -158,12 +170,13 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
 
     double ladgen(){
         //return qf(uniform01_exclude01(lad_generator()));
-        double x,u;
+        double x,u, tmp;
         uint8_t pos;
         do{
             x = help_dist(pos);
             u = uniform01(u_generator());
-        } while(pdf_fast(x)/(M*pdf_approx(x, pos)) < u);
+            tmp = M*pdf_approx(x, pos);
+        } while((y[pos]/tmp < u) && (pdf_fast(x)/(tmp) < u));
         return x;
         //return(qf(uniform01_exclude01(lad_generator())));
     }
@@ -174,6 +187,7 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
         delete [] b;
         delete [] c;
         delete [] x;
+        delete [] y;
         /*
         a = nullptr;
         b = nullptr;

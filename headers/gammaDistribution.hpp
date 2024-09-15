@@ -61,6 +61,22 @@ private:
         return 1;
     }
 
+    virtual double pdf_min(double x1, double x2, uint8_t p) override final
+    {
+        switch (p)
+        {
+        case 0:
+            return 0;
+            break;
+        case 255:
+            return 0;
+            break;
+        default:
+            return std::min<double>(pdf(x1), pdf(x2));
+            break;
+        }
+    }
+
     virtual double left_aprox_pdf(double x)
     {
         return pdf_fast(x);
@@ -77,8 +93,7 @@ private:
         if(alpha >= 1.0){
             return this->init_lad(gs);
         }else{
-            gs = this->lad_generator.set_state(gs);
-            return this->u_generator.set_state(gs);
+            return this->init_gens(gs);
         }
     }
 
@@ -123,7 +138,7 @@ public:
 
     GenType::GeneratorStateType set_state(GenType::GeneratorStateType state)
     {
-        return init_gens(state);
+        return this->init_gens(state);
     }
 
     int counter = 0;
@@ -200,6 +215,22 @@ private:
     virtual double right_max(double x) override
     {
         return 1;
+    }
+
+    virtual double pdf_min(double x1, double x2, uint8_t p) override final
+    {
+        switch (p)
+        {
+        case 0:
+            return INFINITY;
+            break;
+        case 255:
+            return INFINITY;
+            break;
+        default:
+            return std::min<double>(pdf(x1), pdf(x2));
+            break;
+        }
     }
 
     virtual double left_aprox_pdf(double x)
