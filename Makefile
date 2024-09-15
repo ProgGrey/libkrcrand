@@ -1,7 +1,7 @@
 CXX=g++
 AR=ar
-CXXFLAGS_BASE= -std=c++20 -O2 -march=native -flto
-CXXFLAGS= ${CXXFLAGS_BASE} -Wall -Wextra -Wpedantic -Wno-unused-parameter
+CXXFLAGS_BASE= -std=c++20 -O2 -march=native -flto #-Wno-maybe-uninitialized
+CXXFLAGS= ${CXXFLAGS_BASE} -Wall -Wextra -pedantic -Wno-unused-parameter
 
 all:test speed gen gamma
 
@@ -11,7 +11,7 @@ gamma:libkrcrand.a tests/gamma.cpp  headers/gammaDistribution.hpp
 gen:libkrcrand.a tests/gen.cpp
 	$(CXX) ${CXXFLAGS} tests/gen.cpp libkrcrand.a -o gen
 
-speed:libkrcrand.a tests/speed.cpp headers/exponentialDistribution.hpp
+speed:libkrcrand.a tests/speed.cpp headers/exponentialDistribution.hpp headers/gammaDistribution.hpp
 	$(CXX) ${CXXFLAGS} tests/speed.cpp libkrcrand.a -o speed
 
 test:libkrcrand.a tests.o
@@ -45,7 +45,7 @@ gammaDistribution.o:src/distributions/gammaDistribution.cpp headers/math.hpp hea
 	$(CXX) ${CXXFLAGS} -c src/distributions/gammaDistribution.cpp -o gammaDistribution.o
 
 cdflib.o:src/3rdparty/cdflib.cpp src/3rdparty/cdflib.hpp src/3rdparty/raw/cdflib.cpp src/3rdparty/raw/cdflib.hpp
-	$(CXX) ${CXXFLAGS_BASE} -c src/3rdparty/cdflib.cpp -o cdflib.o
+	$(CXX) ${CXXFLAGS_BASE} -Wno-maybe-uninitialized -c src/3rdparty/cdflib.cpp -o cdflib.o -Wno-maybe-uninitialized
 
 functions.o:src/math/functions.cpp headers/math.hpp
 	$(CXX) ${CXXFLAGS} -c src/math/functions.cpp -o functions.o
