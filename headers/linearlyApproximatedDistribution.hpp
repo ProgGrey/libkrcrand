@@ -104,6 +104,21 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             y[0] = pdf_min(qf(0.0), x2, 0);
         }
         for(unsigned  int k = 0; k < tbl_size; k++){
+            double x1 = x2;
+            x2 = qf(static_cast<double>(k + shift + 1)/256.0);
+            double f1 = pdf(x1);
+            double f2 = pdf(x2);
+             //*/
+            /* Linear aproximation g(x) of PDF f(x) and quadratic aproximation G(x) of CDF F(X) with folowing properties:
+            1) int_a^b f(x) = int_a^b g(x)
+            2) f(a)/g(a) = f(b)/g(b)
+            3) F(a) = G(a)
+            4) F(b) = G(b)
+            */
+            double t = 2.0/256.0/((f1+f2)*(x1-x2)*(x1-x2));
+            a[k] = (f2-f1)*t;
+            b[k] = (x2*f1-x1*f2)*t;
+            //*/
             /* Linear aproximation g(x) of PDF f(x) and quadratic aproximation G(x) of CDF F(X) with folowing properties:
             1) int_a^b f(x) = int_a^b g(x)
             2) max|f(x) - g(x)| -> min for all x in [a,b] with property 1)
@@ -111,28 +126,26 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             4) F(b) = G(b)
             The following solution for a and b was obtained by condition like Chebyshev alterance theorem.
             //*/
-            double x1 = x2;
-            x2 = qf(static_cast<double>(k + shift + 1)/256.0);
-            double f1 = pdf(x1);
-            double f2 = pdf(x2);
+            /*
             a[k] = (f2-f1)/(x2-x1);
             b[k] = 1.0/256.0/(x2-x1) - a[k]*(x1+x2)*0.5;
             // Fix negative density
-            if(a[k]*x1 + b[k] < 0.0){
-                double tmp = (x1-x2);
-                tmp *= tmp;
-                a[k] = 2.0/256.0/tmp;
-                b[k] = -2.0/256.0*x1/tmp;
-            } else if(a[k]*x2 + b[k] < 0.0){
-                double tmp = (x1-x2);
-                tmp *= tmp;
-                a[k] = -2.0/256.0/tmp;
-                b[k] = 2.0/256.0*x1/tmp;
+            if(a[k]*x1 + b[k] <= 0.0){
+                double t1 = 2.0/256.0/((x1-x2)*(x1-x2));
+                double t2 = f1/(x2-x1);
+                a[k] = t1-2*t2;
+                b[k] = (x1+x2)*t2-x1*t1;
+            } else if(a[k]*x2 + b[k] <= 0.0){
+                double t1 = 2.0/256.0/((x1-x2)*(x1-x2));
+                double t2 = f2/(x2-x1);
+                a[k] = 2*t2-t1;
+                b[k] = x2*t1 - (x1+x2)*t2;
             }
+            //*/
             c[k] = static_cast<double>(k + shift)/256.0 - 0.5*a[k]*x1*x1 - b[k]*x1;
             x[k] = x1;
             y[k + shift] = pdf_min(x1, x2, k + shift);
-            M = std::max(M, f1/(a[k]*x1+b[k]));
+            //M = std::max(M, f1/(a[k]*x1+b[k]));
             M = std::max(M, f2/(a[k]*x2+b[k]));
             M = std::max(M, med_max(x1, x2, a[k], b[k]));
         }
@@ -144,22 +157,31 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
         if(is_right){
             M = std::max(M, right_max(x[0]));
         }
-        
         /*
         std::cout << 'M' << M << '\n';
         std::cout.precision(16);
+        std::cout << "a = c(";
         for(int  k = 0; k < tbl_size; k++){
             std::cout << a[k] << ',';
+            if(k % 10 == 0){
+                std::cout << '\n';
+            }
         }
-        std::cout << '\n';
+        std::cout << "\b)\n b = c(";
         for(int  k = 0; k < tbl_size; k++){
             std::cout << b[k] << ',';
+            if(k % 10 == 0){
+                std::cout << '\n';
+            }
         }
-        std::cout << '\n';
+        std::cout << "\b)\n cc = c(";
         for(int  k = 0; k < tbl_size; k++){
             std::cout << c[k] << ',';
+            if(k % 10 == 0){
+                std::cout << '\n';
+            }
         }
-        std::cout << '\n';//*/
+        std::cout << "\b)\n";//*/
         return init_gens(gs);
     }
 
