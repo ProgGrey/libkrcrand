@@ -1,6 +1,7 @@
 #include "../headers/libkrcrand.hpp"
 #include "../headers/math.hpp"
 #include "../headers/exponentialDistribution.hpp"
+#include "../headers/gammaDistribution.hpp"
 
 #define BOOST_TEST_MODULE main_test_module
 #define BOOST_TEST_MAIN
@@ -167,3 +168,83 @@ BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
     BOOST_CHECK((mxy-mx*my) < -0.006);
 }
 //*/
+
+
+// @return 0 if test is ok, 1 if KS test fails, 2 or 3 if independency tests fails
+int check_distribution(const char *dist, const vector<double> &params, const vector<double> &data)
+{
+    size_t d_len = strlen(dist);
+    const char *script = "./tests/dists.R";
+    size_t s_len = strlen(script);
+    char *exec_str = new char[s_len + 1 + d_len + 1];
+    char *p = exec_str;
+    // Copy script path
+    memcpy(p, script, s_len);
+    p+=s_len;
+    *p= ' ';
+    p++;
+    // Copy dist name
+    memcpy(p, dist, d_len);
+    p += d_len;
+    *p = '\0';
+    // Write parameters
+    FILE* fd = popen(exec_str, "w");
+    for(double val : params){
+        fprintf(fd, "%.16e ", val);
+    }
+    // Write data
+    for(double val : data){
+        fprintf(fd, "%.16e ", val);
+    }
+    return(pclose(fd));
+}
+
+
+int gamma_goodness(double alpha, double beta)
+{
+    Xoshiro256mm::GeneratorStateType inter(1);
+    //GammaDistributionSplited<Xoshiro256mm> gen(nextafter(1,2), 1, inter);
+    GammaDistribution<Xoshiro256mm> gen(alpha, beta, inter);
+    vector<double> params = {alpha, beta};
+    vector<double> data;
+    for(int k = 0; k < 1000; k++){
+        data.push_back(gen());
+        //std::cout << data.back() << ", ";
+    }
+    return check_distribution("gamma", params, data);
+}
+
+
+int exponential_goodness(double lambda)
+{
+    Xoshiro256mm::GeneratorStateType inter(1);
+    //GammaDistributionSplited<Xoshiro256mm> gen(nextafter(1,2), 1, inter);
+    ExponentialDistribution<Xoshiro256mm> gen(lambda, inter);
+    vector<double> params = {lambda};
+    vector<double> data;
+    for(int k = 0; k < 1000; k++){
+        data.push_back(gen());
+        //std::cout << data.back() << ", ";
+    }
+    return check_distribution("exponential", params, data);
+}
+
+
+BOOST_AUTO_TEST_CASE(goodness_of_fit_tests)
+{
+    BOOST_CHECK(exponential_goodness(0.005)== 0);
+    BOOST_CHECK(exponential_goodness(0.5)== 0);
+    BOOST_CHECK(exponential_goodness(1)== 0);
+    BOOST_CHECK(exponential_goodness(12)== 0);
+    BOOST_CHECK(exponential_goodness(10000)== 0);
+
+
+    BOOST_CHECK(gamma_goodness(0.005, 10)== 0);
+    BOOST_CHECK(gamma_goodness(0.5, 0.1)== 0);
+    BOOST_CHECK(gamma_goodness(1, 1)== 0);
+    BOOST_CHECK(gamma_goodness(2, 0.1)== 0);
+    BOOST_CHECK(gamma_goodness(130, 300)== 0);
+    BOOST_CHECK(gamma_goodness(1300, 0.5)== 0);
+
+    
+}
