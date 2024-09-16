@@ -56,6 +56,7 @@ int main()
     gamma1.set_state(st);
     test_dist("Xoshiro256mmUniversalStable Gamma: ", gamma1)
 #ifdef LIBKRCRAND_ENABLE_SSE2
+    st.seed(1);
     Xoshiro256mmSSE2stable gen2(st);
     test_generator("Xoshiro256mmSSE2stable: ", gen2)
     ExponentialDistribution<Xoshiro256mmSSE2stable, 0> exp2(1.2);
@@ -66,30 +67,35 @@ int main()
     test_dist("Xoshiro256mmSSE2stable Gamma: ", gamma2)
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX2
+    st.seed(1);
     Xoshiro256mmAVX2stable gen3(st);
     test_generator("Xoshiro256mmAVX2stable: ", gen3)
     ExponentialDistribution<Xoshiro256mmAVX2stable, 0> exp3(1.2);
     exp3.set_state(st);
     test_dist("Xoshiro256mmAVX2stable Exp: ", exp3)
-    GammaDistribution<Xoshiro256mmSSE2stable> gamma3(500,12);
-    gamma2.set_state(st);
+    GammaDistribution<Xoshiro256mmAVX2stable> gamma3(500,12);
+    gamma3.set_state(st);
     test_dist("Xoshiro256mmAVX2stable Gamma: ", gamma3)
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX512F
+    st.seed(1);
     Xoshiro256mmAVX512Fstable gen4(st);
     test_generator("Xoshiro256mmAVX512Fstable: ", gen4)
     ExponentialDistribution<Xoshiro256mmAVX512Fstable, 0> exp4(1.2);
     exp4.set_state(st);
     test_dist("Xoshiro256mmAVX512Fstable Exp: ", exp4)
-    GammaDistribution<Xoshiro256mmSSE2stable> gamma4(500,12);
+    GammaDistribution<Xoshiro256mmAVX512Fstable> gamma4(500,12);
     gamma4.set_state(st);
-    test_dist("Xoshiro256mmAVX2stable Gamma: ", gamma4)
+    test_dist("Xoshiro256mmAVX512Fstable Gamma: ", gamma4)
 #endif
+    st.seed(1);
     Xoshiro256mm gen5(st);
     test_generator("Xoshiro256mm: ", gen5);
     ExponentialDistribution<Xoshiro256mm, 0> exp5(1.2);
     exp5.set_state(st);
     test_dist("Xoshiro256mm Exp: ", exp5)
-    
+    GammaDistribution<Xoshiro256mm> gamma5(50, 12);
+    gamma5.set_state(st);
+    test_dist("Xoshiro256mm Gamma: ", gamma5)
     return 0;
 }

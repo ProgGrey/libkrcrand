@@ -1,6 +1,6 @@
 CXX=g++
 AR=ar
-CXXFLAGS_BASE= -std=c++20 -O2 -march=native -flto #-Wno-maybe-uninitialized
+CXXFLAGS_BASE= -std=c++20 -O2 -march=native -flto=auto -Wno-maybe-uninitialized
 CXXFLAGS= ${CXXFLAGS_BASE} -Wall -Wextra -pedantic -Wno-unused-parameter
 
 all:test speed gen gamma
@@ -17,10 +17,10 @@ speed:libkrcrand.a tests/speed.cpp headers/exponentialDistribution.hpp headers/g
 test:libkrcrand.a tests.o
 	$(CXX) ${CXXFLAGS} tests.o libkrcrand.a -lboost_unit_test_framework -o test
 
-tests.o:tests/tests.cpp headers/generators.hpp
+tests.o:tests/tests.cpp
 	$(CXX) ${CXXFLAGS} -c tests/tests.cpp -o tests.o
 
-libkrcrand.a:tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o gammaDistribution.o cdflib.o functions.o
+libkrcrand.a:tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o gammaDistribution.o cdflib.o functions.o 
 	$(AR) rc libkrcrand.a tools.o Xoshiro256mm.o math_generic.o math_sse2.o math_avx2.o math_avx512.o gammaDistribution.o cdflib.o functions.o
 
 tools.o:src/tools.cpp src/tools.hpp

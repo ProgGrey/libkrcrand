@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
     ExponentialDistribution<Xoshiro256mmAVX512Fstable, 1> exp_avx512_n(9.8);
     exp_avx512_n.set_state(st);
 #endif
-    unsigned int N = 10;
+    unsigned int N = 10*Generator_Buff_Size;
     double mx = 0,my = 0,mxy = 0;
     for(unsigned int k = 0; k < N; k++){
         double val = exp_u();
@@ -258,6 +258,39 @@ BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
     BOOST_CHECK((mxy-mx*my) < -0.006);
 }
 //*/
+
+BOOST_AUTO_TEST_CASE(gamma_distribution_tests)
+{
+    Xoshiro256mmState st;
+    st.seed(1);
+    GammaDistribution<Xoshiro256mmUniversalStable> gamma_u(3.6, 2);
+    gamma_u.set_state(st);
+#ifdef LIBKRCRAND_ENABLE_SSE2
+    GammaDistribution<Xoshiro256mmSSE2stable> gamma_sse2(3.6, 2);
+    gamma_sse2.set_state(st);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX2
+    GammaDistribution<Xoshiro256mmAVX2stable> gamma_avx2(3.6, 2);
+    gamma_avx2.set_state(st);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+    GammaDistribution<Xoshiro256mmAVX512Fstable> gamma_avx512(3.6, 2);
+    gamma_avx512.set_state(st);
+#endif
+    unsigned int N = 10*Generator_Buff_Size;
+    for(unsigned int k = 0; k < N; k++){
+        double val = gamma_u();
+#ifdef LIBKRCRAND_ENABLE_SSE2
+        BOOST_CHECK(fabs(val - gamma_sse2())/val < 1e-13);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX2
+        BOOST_CHECK(fabs(val - gamma_avx2())/val < 1e-13);
+#endif
+#ifdef LIBKRCRAND_ENABLE_AVX512F
+        BOOST_CHECK(fabs(val - gamma_avx512())/val < 1e-13);
+#endif
+    }
+}
 
 
 // @return 0 if test is ok, 1 if KS test fails, 2 or 3 if independency tests fails

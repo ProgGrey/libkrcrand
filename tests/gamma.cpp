@@ -40,6 +40,7 @@ double computate_p(double alpha)
         return exp((a-1.0)*log(a-1.0)-lgamma(a)-a+1.0);
     }
 }
+
 // 
 int main()
 {
@@ -56,16 +57,43 @@ int main()
     //*/
     Xoshiro256mm::GeneratorStateType inter(1);
     //GammaDistributionSplited<Xoshiro256mm> gen(nextafter(1,2), 1, inter);
-    GammaDistribution<Xoshiro256mm> gen(1.2, 10, inter);
+    GammaDistribution<Xoshiro256mmUniversalStable> gen(3.6, 2, inter);
+    inter.seed(1);
+    GammaDistribution<Xoshiro256mmSSE2stable> gen2(3.6, 2, inter);
     cout.precision(9);
-    for(unsigned int j =0; j < 100; j++){
+    double mx = 0;
+    //125000
+    /*
+    for(unsigned int k = 0; k < 256; k++){
+        double v1 = gen();
+        double v2 = gen2();
+        cout << k << ' ' << v1 << ' ' << v2 << '\t' << v1 - v2 << endl;
+        mx = max(abs(v1-v2), mx);
+    }
+    cout << mx << endl;
+    //*/
+    for(unsigned int j =0; j < 1; j++){
         for(unsigned int k =0; k < 10; k++){
-            cout << gen() << ", ";
-            //gen();
+            cout << gen2() << ", ";
+            gen();
         }
         cout << endl;
     }
     cout << gen.counter << endl;
+    
+    for(unsigned int j =10; j < 1000000; j++){
+        mx = std::max(mx,abs(gen2()-gen()));
+    }
+    for(unsigned int j =0; j < 1; j++){
+        for(unsigned int k =0; k < 10; k++){
+            cout << gen2() << ", ";
+            gen();
+        }
+        cout << endl;
+    }
+    
+    //cout << gen.counter << endl;
+    cout << mx << endl;//*/
     /*
     GammaDistributionSplited<Xoshiro256mm> gen2(nextafter(1,2), 1, inter);
     
