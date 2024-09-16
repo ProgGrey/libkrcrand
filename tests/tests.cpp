@@ -70,8 +70,7 @@ BOOST_AUTO_TEST_CASE(Xoshiro256mmGenerators)
     }
 }
 
-
-BOOST_AUTO_TEST_CASE(math_tests)
+BOOST_AUTO_TEST_CASE(log_tests)
 {
     const double values[8] = {0.1, 2, 3.5, 1, 0.000001, 12, 7643921, 2.2250738585072009e-318};
     double std_res[8];
@@ -112,6 +111,97 @@ BOOST_AUTO_TEST_CASE(math_tests)
     }
 #endif
 }
+
+BOOST_AUTO_TEST_CASE(p2_solve_tests)
+{
+    DECL_KRCRAND_ALIGN double a[] = { 2,   -0,  2,   12, 4,  2, 2, 12};
+    DECL_KRCRAND_ALIGN double b[] = { 1,   1,  0,   1,  0,  1, 0, 1};
+    DECL_KRCRAND_ALIGN double c[] = {-1,   2, -1,   0,  0, -1,-1, 0};
+    DECL_KRCRAND_ALIGN double x1[] = {0, -2.5, 0, -0.2, -1,-2,-2,-0.1};
+    DECL_KRCRAND_ALIGN double x2[] = {1, -1.5, 2, -0.1,  1,-1, 0, 0.1};
+    double res[8];
+    for(unsigned int k = 0; k < 8; k++){
+        res[k] = unsafe_p2_half_solve(a[k], b[k], c[k], x1[k], x2[k]);
+    }
+    #ifdef LIBKRCRAND_ENABLE_SSE2
+    alignas(16) double res_sse[2];
+    for(unsigned int  i = 0; i < 8; i++){
+        for(unsigned int  j = 0; j < 8; j++){
+            __m128d a_sse =  _mm_set_pd(a[j], a[i]);
+            __m128d b_sse =  _mm_set_pd(b[j], b[i]);
+            __m128d c_sse =  _mm_set_pd(c[j], c[i]);
+            __m128d x1_sse =  _mm_set_pd(x1[j], x1[i]);
+            __m128d x2_sse =  _mm_set_pd(x2[j], x2[i]);
+            __m128d r_sse = unsafe_p2_half_solve(a_sse, b_sse, c_sse, x1_sse, x2_sse);
+            _mm_store_pd(res_sse, r_sse);
+            //cout << res[j] << ' ' << res[i] << '\n';
+            BOOST_CHECK(res[i] == res_sse[0]);
+            BOOST_CHECK(res[j] == res_sse[1]);    
+        }
+    }
+    #endif
+    #ifdef LIBKRCRAND_ENABLE_AVX2
+    alignas(32) double res_avx[4];
+    for(unsigned int  l = 0; l < 8; l++){
+        for(unsigned int  k = 0; k < 8; k++){
+            for(unsigned int  i = 0; i < 8; i++){
+                for(unsigned int  j = 0; j < 8; j++){
+                    __m256d a_avx =  _mm256_set_pd(a[j], a[i], a[k], a[l]);
+                    __m256d b_avx =  _mm256_set_pd(b[j], b[i], b[k], b[l]);
+                    __m256d c_avx =  _mm256_set_pd(c[j], c[i], c[k], c[l]);
+                    __m256d x1_avx =  _mm256_set_pd(x1[j], x1[i], x1[k], x1[l]);
+                    __m256d x2_avx =  _mm256_set_pd(x2[j], x2[i], x2[k], x2[l]);
+                    __m256d r_avx = unsafe_p2_half_solve(a_avx, b_avx, c_avx, x1_avx, x2_avx);
+                    _mm256_store_pd(res_avx, r_avx);
+                    //cout << res[j] << ' ' << res[i] << '\n';
+                    BOOST_CHECK(res[l] == res_avx[0]);
+                    BOOST_CHECK(res[k] == res_avx[1]);
+                    BOOST_CHECK(res[i] == res_avx[2]);
+                    BOOST_CHECK(res[j] == res_avx[3]);
+                }
+            }
+        }
+    }
+    #endif
+    #ifdef LIBKRCRAND_ENABLE_AVX512F
+    alignas(64) double res_avx512[8];
+    __m512d a_avx512 =  _mm512_load_pd(a);
+    __m512d b_avx512 =  _mm512_load_pd(b);
+    __m512d c_avx512 =  _mm512_load_pd(c);
+    __m512d x1_avx512 = _mm512_load_pd(x1);
+    __m512d x2_avx512 = _mm512_load_pd(x2);
+    __m512d r_avx512 = unsafe_p2_half_solve(a_avx512, b_avx512, c_avx512, x1_avx512, x2_avx512);
+    _mm512_store_pd(res_avx512, r_avx512);
+    for( unsigned int k =0; k < 8; k++){
+        BOOST_CHECK(res[k] == res_avx512[k]);
+    }
+    for(unsigned int  l = 0; l < 8; l++){
+        for(unsigned int  k = 0; k < 8; k++){
+            for(unsigned int  i = 0; i < 8; i++){
+                for(unsigned int  j = 0; j < 8; j++){
+                    __m512d a_avx512 =  _mm512_set_pd(a[j], a[i], a[k], a[l], a[l], a[k], a[i], a[j]);
+                    __m512d b_avx512 =  _mm512_set_pd(b[j], b[i], b[k], b[l], b[l], b[k], b[i], b[j]);
+                    __m512d c_avx512 =  _mm512_set_pd(c[j], c[i], c[k], c[l], c[l], c[k], c[i], c[j]);
+                    __m512d x1_avx512 =  _mm512_set_pd(x1[j], x1[i], x1[k], x1[l], x1[l], x1[k], x1[i], x1[j]);
+                    __m512d x2_avx512 =  _mm512_set_pd(x2[j], x2[i], x2[k], x2[l], x2[l], x2[k], x2[i], x2[j]);
+                    __m512d r_avx512 = unsafe_p2_half_solve(a_avx512, b_avx512, c_avx512, x1_avx512, x2_avx512);
+                    _mm512_store_pd(res_avx512, r_avx512);
+                    //cout << res[j] << ' ' << res[i] << '\n';
+                    BOOST_CHECK(res[j] == res_avx512[0]);
+                    BOOST_CHECK(res[i] == res_avx512[1]);
+                    BOOST_CHECK(res[k] == res_avx512[2]);
+                    BOOST_CHECK(res[l] == res_avx512[3]);
+                    BOOST_CHECK(res[l] == res_avx512[4]);
+                    BOOST_CHECK(res[k] == res_avx512[5]);
+                    BOOST_CHECK(res[i] == res_avx512[6]);
+                    BOOST_CHECK(res[j] == res_avx512[7]);
+                }
+            }
+        }
+    }
+    #endif
+}
+
 
 BOOST_AUTO_TEST_CASE(exponential_distribution_tests)
 {

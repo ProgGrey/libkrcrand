@@ -35,7 +35,8 @@ using namespace krcrand;
 
 #define sqrt_d(a) _mm512_sqrt_pd(a)
 #define and_cond(a,b) ((a)&(b))
-#define testc(a,b) ((a)==(b))
+#define testc(a,b) ((~a & b) == 0)
+#define test_all_ones(x) ((~x &  0xff) == 0)
 
 #define mov_mask_d(flag, if_true, if_false) _mm512_mask_mov_pd (if_false, flag, if_true)
 

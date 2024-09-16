@@ -41,6 +41,22 @@ using namespace krcrand;
 
 #define sqrt_d(a) _mm_sqrt_pd(a)
 
+/*
+#include <iostream>
+
+void prnt_dc_sse(__m128d val)
+{
+    __m128i vi = to_i(val);
+    alignas(16) uint64_t buf[2];
+    _mm_store_si128(reinterpret_cast<__m128i*>(buf), vi);
+    std::cout << std::hex;
+    std::cout << "0x" << buf[0] << " 0x" << buf[1] << '\n';
+    std::cout << std::dec;
+}
+
+#define prnt_dc(a) prnt_dc_sse(a)
+//*/
+
 #include "amd64.hpp"
 
 #if defined(LIBKRCRAND_ENABLE_AVX512VL) && defined(LIBKRCRAND_ENABLE_AVX512DQ)
@@ -69,21 +85,22 @@ __m128d u64_to_d_sse2(__m128i x){
 #endif
 
 #ifdef LIBKRCRAND_ENABLE_SSE4_1
+#include <smmintrin.h>
 #define testc(a,b) _mm_testc_si128(_mm_castpd_si128(a),_mm_castpd_si128(b))
+#define test_all_ones(x) _mm_test_all_ones(_mm_castpd_si128(x))
 #else
-int testc_sse2_slow(__m128d a, __m128d b){
-    alignas(16) double ar[2];
-    alignas(16) double br[2];
-    _mm_store_pd(ar, a);
-    _mm_store_pd(br, b);
-    if((ar[0] == br[0]) && (ar[1] == br[1])){
+int testc_sse2_slow(__m128i a, __m128i b){
+    __m128i res = _mm_andnot_si128 (a, b);
+    alignas(16) uint64_t res_arr[2];
+    _mm_store_si128(reinterpret_cast<__m128i*>(res_arr), res);
+    if((res_arr[0] == 0) && (res_arr[1] == 0)){
         return 1;
     } else{
         return 0;
     }
 }
-
-#define testc(a,b) testc_sse2_slow(a,b)
+#define testc(a,b) testc_sse2_slow(_mm_castpd_si128(a), _mm_castpd_si128(b))
+#define test_all_ones(x) testc_sse2_slow(_mm_castpd_si128(x), _mm_set1_epi64x(0xFFFFFFFFFFFFFFFF))
 #endif
 
 

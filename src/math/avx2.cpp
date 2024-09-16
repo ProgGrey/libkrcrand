@@ -31,6 +31,7 @@ using namespace krcrand;
 #define lt_d(a,b) _mm256_cmp_pd (a, b, _CMP_LT_OS)
 #define and_cond(a, b) _mm256_and_pd(a, b)
 #define testc(a,b) _mm256_testc_pd(a,b)
+#define test_all_ones(x) _mm256_testc_pd(x, _mm256_castsi256_pd(_mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF)))
 
 #define notand_d(a,b) _mm256_andnot_pd(a, b)
 #define and_d(a,b) _mm256_and_pd(a, b)

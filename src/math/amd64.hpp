@@ -95,8 +95,11 @@ d_type name(d_type x)\
 #define p2_half_function(name)\
 d_type name(d_type a, d_type b, d_type c, d_type xl, d_type xr)\
 {\
-    auto lin_flag = le_d(and_d(a, to_d(set1_i(0x7FFFFFFFFFFFFFFF))), set1_d(DBL_EPSILON));\
-    d_type lin_sol = div_d(xor_d(c, to_d(set1_i(0x8000000000000000))),b);\
+    auto quad_flag = le_d(set1_d(DBL_EPSILON), and_d(a, to_d(set1_i(0x7FFFFFFFFFFFFFFF))));\
+    d_type lin_sol;\
+    if(!test_all_ones(quad_flag)){\
+        lin_sol = div_d(xor_d(c, to_d(set1_i(0x8000000000000000))),b);\
+    }\
     d_type sd = mull_d(b, b);\
     d_type tmp = mull_d(set1_d(-2.0), a);\
     sd = fma_d(tmp,c, sd);\
@@ -105,11 +108,11 @@ d_type name(d_type a, d_type b, d_type c, d_type xl, d_type xr)\
     /*This root is more probable due to properties of used approximation:*/\
     d_type quad_sol = add_d(b,sd);\
     quad_sol = div_d(quad_sol, a);\
-    d_type res = branch(lin_flag, lin_sol, quad_sol);\
+    d_type res = branch(quad_flag, quad_sol, lin_sol);\
     auto left_c = le_d(xl, res);\
     auto right_c = le_d(res, xr);\
     auto first_flag = and_cond(left_c, right_c);\
-    if(testc(left_c, right_c)){\
+    if(test_all_ones(first_flag)){\
         return res;\
     }\
     quad_sol = sub_d(b,sd);\
