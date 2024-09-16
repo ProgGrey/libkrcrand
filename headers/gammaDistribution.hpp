@@ -39,42 +39,41 @@ private:
         return 1;
     }
 
-    virtual double med_max(double x1, double x2, double a, double b) override
+    virtual double med_maxmin(double x1, double x2, double a, double b, double &y) override
     {
         double xc1, xc2;
         p2_solve(a, b-a*beta*(alpha - 2), b*beta*(1.0-alpha),xc1, xc2);
+        double y1 = pdf(xc1)/(a*xc1+b);
+        double y2 = pdf(xc2)/(a*xc2+b);
         if((x1 < xc1 && xc1 < x2) && (x1 < xc2 && xc2 < x2)){
-            return std::max<double>(pdf(xc1)/(a*xc1+b), pdf(xc2)/(a*xc2+b));
+            y = std::min(y1, y2);
+            return std::max<double>(y1, y2);
         } else if (x1 < xc1 && xc1 < x2){
-            return pdf(xc1)/(a*xc1+b);
+            y = y1;
+            return y1;
         } else if (x1 < xc2 && xc2 < x2){
-            return pdf(xc2)/(a*xc2+b);
+            y = y2;
+            return y2;
         } else{
             double xc = (x2+x1)*0.5;
-            return pdf(xc)/(a*xc+b);
+            y = pdf(xc)/(a*xc+b);
+            return y;
         }//*/
         return 1;
     }
 
-    virtual double right_max(double x) override
+    virtual double right_max(double x) override final
     {
         return 1;
     }
 
-    virtual double pdf_min(double x1, double x2, uint8_t p) override final
+    virtual double left_min(double x) override final
     {
-        switch (p)
-        {
-        case 0:
-            return 0;
-            break;
-        case 255:
-            return 0;
-            break;
-        default:
-            return std::min<double>(pdf(x1), pdf(x2));
-            break;
-        }
+        return 1;
+    }
+    virtual double right_min(double x) override final
+    {
+        return 1;
     }
 
     virtual double left_aprox_pdf(double x)
@@ -171,6 +170,7 @@ public:
     }
 };
 
+/*
 template<typename GenType>
 class GammaDistributionSplited final : public LAD<GenType, true, true> 
 {
@@ -195,42 +195,41 @@ private:
         return 1;
     }
 
-    virtual double med_max(double x1, double x2, double a, double b) override
+        virtual double med_maxmin(double x1, double x2, double a, double b, double &y) override
     {
         double xc1, xc2;
         p2_solve(a, b-a*beta*(alpha - 2), b*beta*(1.0-alpha),xc1, xc2);
+        double y1 = pdf(xc1)/(a*xc1+b);
+        double y2 = pdf(xc2)/(a*xc2+b);
         if((x1 < xc1 && xc1 < x2) && (x1 < xc2 && xc2 < x2)){
-            return std::max<double>(pdf(xc1)/(a*xc1+b), pdf(xc2)/(a*xc2+b));
+            y = std::min(y1, y2);
+            return std::max<double>(y1, y2);
         } else if (x1 < xc1 && xc1 < x2){
-            return pdf(xc1)/(a*xc1+b);
+            y = y1;
+            return y1;
         } else if (x1 < xc2 && xc2 < x2){
-            return pdf(xc2)/(a*xc2+b);
+            y = y2;
+            return y2;
         } else{
             double xc = (x2+x1)*0.5;
-            return pdf(xc)/(a*xc+b);
-        }//*/
-        return 1;
-    }
-
-    virtual double right_max(double x) override
-    {
-        return 1;
-    }
-
-    virtual double pdf_min(double x1, double x2, uint8_t p) override final
-    {
-        switch (p)
-        {
-        case 0:
-            return INFINITY;
-            break;
-        case 255:
-            return INFINITY;
-            break;
-        default:
-            return std::min<double>(pdf(x1), pdf(x2));
-            break;
+            y = pdf(xc)/(a*xc+b);
+            return y;
         }
+        return 1;
+    }
+
+    virtual double right_max(double x) override final
+    {
+        return 1;
+    }
+
+    virtual double left_min(double x1, double x2) override final
+    {
+        return 0;
+    }
+    virtual double right_min(double x1, double x2) override final
+    {
+        return 0;
     }
 
     virtual double left_aprox_pdf(double x)
@@ -331,9 +330,9 @@ public:
                 }
             }while(t < v);
             return x*beta;
-            //*/
         }
     }
 };
 
+//*/
 }

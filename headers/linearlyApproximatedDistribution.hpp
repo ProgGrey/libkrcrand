@@ -81,9 +81,10 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
 
     // Points where maximum of f(x)/g(x) is possible.
     virtual double left_max(double x) = 0;
-    virtual double med_max(double x1, double x2, double a, double b) = 0;
+    virtual double med_maxmin(double x1, double x2, double a, double b, double &y) = 0;
     virtual double right_max(double x) = 0;
-    virtual double pdf_min(double x1, double x2, uint8_t p) = 0;
+    virtual double left_min(double x) = 0;
+    virtual double right_min(double x) = 0;
 
     GenType::GeneratorStateType init_gens(GenType::GeneratorStateType gs)
     {
@@ -101,7 +102,7 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
         int shift = (is_left ? 1 : 0);
         double x2 = qf(static_cast<double>(shift)/256.0);
         if(is_left){
-            y[0] = pdf_min(qf(0.0), x2, 0);
+            y[0] = left_min(x2);
         }
         for(unsigned  int k = 0; k < tbl_size; k++){
             double x1 = x2;
@@ -144,18 +145,24 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             //*/
             c[k] = static_cast<double>(k + shift)/256.0 - 0.5*a[k]*x1*x1 - b[k]*x1;
             x[k] = x1;
-            y[k + shift] = pdf_min(x1, x2, k + shift);
+            //y[k + shift] = pdf_min(x1, x2, k + shift);
             //M = std::max(M, f1/(a[k]*x1+b[k]));
-            M = std::max(M, f2/(a[k]*x2+b[k]));
-            M = std::max(M, med_max(x1, x2, a[k], b[k]));
+            double yy1 = f2/(a[k]*x2+b[k]);
+            double yy2;
+            double yy3 = med_maxmin(x1, x2, a[k], b[k], yy2);
+            M = std::max(M, std::max(yy1, yy3));
+            y[k + shift] = std::min(yy1, yy2);
         }
         x[tbl_size] = x2;
-        y[255] = pdf_min(x2, qf(1), 255);
         if(is_left){
             M = std::max(M, left_max(x[0]));
         }
         if(is_right){
+            y[255] = right_min(x2);
             M = std::max(M, right_max(x[0]));
+        }
+        for(unsigned int  k =0; k <= 255; k++){
+            y[k] /=M;
         }
         /*
         std::cout << 'M' << M << '\n';
@@ -201,7 +208,7 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             x = help_dist(pos);
             u = uniform01(u_generator());
             tmp = M*pdf_approx(x, pos);
-        } while((y[pos]/tmp < u) && (pdf_fast(x)/(tmp) < u));
+        } while((y[pos] < u) && (pdf_fast(x)/(tmp) < u));
         return x;
         //return(qf(uniform01_exclude01(lad_generator())));
     }
