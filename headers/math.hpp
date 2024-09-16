@@ -42,7 +42,9 @@ inline __m128d type_depend_mull(__m128d a, double b)
 {
     return _mm_mul_pd(a, _mm_set1_pd(b));
 }
+__m128d uniform01(__m128i a);
 __m128d uniform01_exclude0(__m128i a);
+__m128d uniform01_exclude01(__m128i a);
 __m128d  unsafe_log(__m128d x);
 __m128d unsafe_p2_half_solve(__m128d a, __m128d b, __m128d c, __m128d xl, __m128d xr);
 }
@@ -56,7 +58,9 @@ inline __m256d type_depend_mull(__m256d a, double b)
 {
     return _mm256_mul_pd(a, _mm256_set1_pd(b));
 }
+__m256d uniform01(__m256i a);
 __m256d uniform01_exclude0(__m256i a);
+__m256d uniform01_exclude01(__m256i a);
 __m256d  unsafe_log(__m256d x);
 __m256d unsafe_p2_half_solve(__m256d a, __m256d b, __m256d c, __m256d xl, __m256d xr);
 }
@@ -69,8 +73,10 @@ inline __m512d type_depend_mull(__m512d a, double b)
 {
     return _mm512_mul_pd(a, _mm512_set1_pd(b));
 }
+__m512d uniform01(__m512i a);
 __m512d uniform01_exclude0(__m512i a);
-__m512d  unsafe_log(__m512d x);
+__m512d uniform01_exclude01(__m512i a);
+__m512d unsafe_log(__m512d x);
 __m512d unsafe_p2_half_solve(__m512d a, __m512d b, __m512d c, __m512d xl, __m512d xr);
 }
 #endif

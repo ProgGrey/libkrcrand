@@ -69,7 +69,9 @@ horner_function(horner_avx2)
 horner1_function(horner1_avx2)
 
 namespace krcrand{
+uniform01_function(uniform01)
 uniform01_exclude0_function(uniform01_exclude0)
+uniform01_exclude01_function(uniform01_exclude01)
 log_function(unsafe_log, horner_avx2, horner1_avx2)
 p2_half_function(unsafe_p2_half_solve)
 }

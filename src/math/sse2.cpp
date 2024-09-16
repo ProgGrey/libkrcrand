@@ -107,7 +107,9 @@ int testc_sse2_slow(__m128i a, __m128i b){
 horner_function(horner_sse2)
 horner1_function(horner1_sse2)
 namespace krcrand{
+uniform01_function(uniform01)
 uniform01_exclude0_function(uniform01_exclude0)
+uniform01_exclude01_function(uniform01_exclude01)
 log_function(unsafe_log, horner_sse2, horner1_sse2)
 
 p2_half_function(unsafe_p2_half_solve)

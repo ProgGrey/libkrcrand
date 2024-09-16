@@ -1,11 +1,24 @@
 #include "../../headers/math.hpp"
 #include <cstdint>
 #include <cfloat>
+#include <cmath>
+
+#define uniform01_function(name) \
+d_type name(i_type a)\
+{\
+    return mull_d(conv_u_to_d(a), set1_d(5.4210108624275221700e-20));\
+}
 
 #define uniform01_exclude0_function(name) \
 d_type name(i_type a)\
 {\
     return fma_d(conv_u_to_d(a), set1_d(5.4210108624275221703e-20), set1_d(5.4210108624275221700e-20));\
+}
+
+#define uniform01_exclude01_function(name) \
+d_type name(i_type a)\
+{\
+    return fma_d(conv_u_to_d(a), set1_d(5.4210108624275221703e-20*nextafter(static_cast<double>(1.0), 0.0)), set1_d(5.4210108624275221700e-20));\
 }
 
 #define horner_function(name) \

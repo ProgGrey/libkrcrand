@@ -63,7 +63,9 @@ __m512d u64_to_d_avx512(__m512i x)
 horner_function(horner_avx512)
 horner1_function(horner1_avx512)
 namespace krcrand{
+uniform01_function(uniform01)
 uniform01_exclude0_function(uniform01_exclude0)
+uniform01_exclude01_function(uniform01_exclude01)
 log_function(unsafe_log, horner_avx512, horner1_avx512)
 p2_half_function(unsafe_p2_half_solve)
 }
