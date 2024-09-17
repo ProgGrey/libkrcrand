@@ -121,6 +121,9 @@ d_type name(d_type a, d_type b, d_type c, d_type xl, d_type xr)\
     /*This root is more probable due to properties of used approximation:*/\
     d_type quad_sol = add_d(b,sd);\
     quad_sol = div_d(quad_sol, a);\
+    d_type num = fma_d(mull_d(quad_sol,quad_sol), a, mull_d(set1_d(-2.0),c));\
+    d_type den = mull_d(set1_d(2.0), fms_d(a, quad_sol, b));\
+    quad_sol = branch(eq_d(den, set1_d(0.0)), quad_sol, div_d(num,den));\
     d_type res = branch(quad_flag, quad_sol, lin_sol);\
     auto left_c = le_d(xl, res);\
     auto right_c = le_d(res, xr);\
@@ -130,6 +133,9 @@ d_type name(d_type a, d_type b, d_type c, d_type xl, d_type xr)\
     }\
     quad_sol = sub_d(b,sd);\
     quad_sol = div_d(quad_sol, a);\
+    num = fma_d(mull_d(quad_sol,quad_sol), a, mull_d(set1_d(-2.0),c));\
+    den = mull_d(set1_d(2.0), fms_d(a, quad_sol, b));\
+    quad_sol = branch(eq_d(den, set1_d(0.0)), quad_sol, div_d(num,den));\
     res = branch(first_flag, res, quad_sol);\
     return res;\
 }

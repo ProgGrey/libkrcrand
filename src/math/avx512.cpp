@@ -13,6 +13,7 @@ using namespace krcrand;
 #define add_d(a, b) _mm512_add_pd(a, b)
 #define sub_d(a, b) _mm512_sub_pd(a, b)
 #define fma_d(a,b,c) _mm512_fmadd_pd(a,b,c)
+#define fms_d(a,b,c) _mm512_fmsub_pd(a,b,c)
 
 #define to_i(a) _mm512_castpd_si512(a)
 #define to_d(a) _mm512_castsi512_pd(a)
@@ -23,6 +24,7 @@ using namespace krcrand;
 #define set1_d(a) _mm512_set1_pd(a)
 #define set1_i(a) _mm512_set1_epi64(a)
 
+#define eq_d(a,b) _mm512_cmp_pd_mask(a, b, _CMP_EQ_OS)
 #define le_d(a,b) _mm512_cmp_pd_mask(a, b, _CMP_LE_OS)
 #define lt_d(a,b) _mm512_cmp_pd_mask(a, b, _CMP_LT_OS)
 

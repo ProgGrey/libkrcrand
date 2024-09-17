@@ -14,8 +14,10 @@ using namespace krcrand;
 #define sub_d(a, b) _mm256_sub_pd(a, b)
 #ifdef LIBKRCRAND_ENABLE_FMA3
 #define fma_d(a,b,c) _mm256_fmadd_pd(a,b,c)
+#define fms_d(a,b,c) _mm256_fmsub_pd(a,b,c)
 #else
 #define fma_d(a,b,c) _mm256_add_pd(_mm256_mul_pd(a,b), c)
+#define fms_d(a,b,c) _mm256_sub_pd(_mm256_mul_pd(a,b), c)
 #endif
 
 #define to_i(a) _mm256_castpd_si256(a)
@@ -27,6 +29,7 @@ using namespace krcrand;
 #define set1_d(a) _mm256_set1_pd(a)
 #define set1_i(a) _mm256_set1_epi64x(a)
 
+#define eq_d(a,b) _mm256_cmp_pd (a, b, _CMP_EQ_OS)
 #define le_d(a,b) _mm256_cmp_pd (a, b, _CMP_LE_OS)
 #define lt_d(a,b) _mm256_cmp_pd (a, b, _CMP_LT_OS)
 #define and_cond(a, b) _mm256_and_pd(a, b)

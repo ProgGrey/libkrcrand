@@ -98,7 +98,6 @@ double unsafe_log(double x)
     return res + addition;
 }
 
-
 double unsafe_p2_half_solve(double a, double b, double c, double xl, double xr)
 {
     if(abs(a) < DBL_EPSILON){
@@ -109,9 +108,16 @@ double unsafe_p2_half_solve(double a, double b, double c, double xl, double xr)
     // This root is more probable due to properties of used approximation:
     double xx = (-b+sd)/a;
     if((xl <= xx) && (xx <= xr)){
+        if(abs(b) > DBL_EPSILON){
+            xx = 0.5*fma(a,xx*xx,-2.0*c)/fma(a,xx,b);
+        }
         return xx;
     } else{
-        return (-b-sd)/a;
+        xx = (-b-sd)/a;
+        if(abs(b) > DBL_EPSILON){
+            xx = 0.5*fma(a,xx*xx,-2.0*c)/fma(a,xx,b);
+        }
+        return xx;
     }
 }
 

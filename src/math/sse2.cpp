@@ -15,8 +15,10 @@ using namespace krcrand;
 #ifdef LIBKRCRAND_ENABLE_FMA3
 #include <immintrin.h>
 #define fma_d(a,b,c) _mm_fmadd_pd(a,b,c)
+#define fms_d(a,b,c) _mm_fmsub_pd(a,b,c)
 #else
 #define fma_d(a,b,c) _mm_add_pd(_mm_mul_pd(a,b), c)
+#define fms_d(a,b,c) _mm_sub_pd(_mm_mul_pd(a,b), c)
 #endif
 
 #define to_i(a) _mm_castpd_si128(a)
@@ -28,6 +30,7 @@ using namespace krcrand;
 #define set1_d(a) _mm_set1_pd(a)
 #define set1_i(a) _mm_set1_epi64x(a)
 
+#define eq_d(a,b) _mm_cmpeq_pd(a, b)
 #define le_d(a,b) _mm_cmple_pd(a, b)
 #define lt_d(a,b) _mm_cmplt_pd(a, b)
 #define and_cond(a, b) _mm_and_pd(a, b)
