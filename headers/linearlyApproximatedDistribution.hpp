@@ -396,7 +396,6 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
     const unsigned int tbl_shift = 56;//64-log2(tbl_size)
 
     virtual double pdf(double x) = 0;
-    virtual double pdf_fast(double x) = 0;
     virtual double qf(double x) = 0;
 
     double ladgen(){
@@ -407,7 +406,7 @@ template<typename GenType, bool is_left = true, bool is_right = true> class LAD{
             x = help_dist(pos, u);
             //u = uniform01(u_generator());
             tmp = M*pdf_approx(x, pos);
-        } while((y[pos] < u) && (pdf_fast(x)/(tmp) < u));
+        } while((y[pos] < u) && (pdf(x)/(tmp) < u));
         return x;
         //return(qf(uniform01_exclude01(lad_generator())));
     }
