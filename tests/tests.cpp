@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(p2_solve_tests)
             __m128d x2_sse =  _mm_set_pd(x2[j], x2[i]);
             __m128d r_sse = unsafe_p2_half_solve(a_sse, b_sse, c_sse, x1_sse, x2_sse);
             _mm_store_pd(res_sse, r_sse);
-            //cout << res[j] << ' ' << res[i] << '\n';
+            //cout << i << ' ' << j << ' ' << res[j] << ' ' << res_sse[1] << ' ' << res[i] << ' ' << res_sse[0] << '\n';
             BOOST_CHECK(res[i] == res_sse[0]);
             BOOST_CHECK(res[j] == res_sse[1]);    
         }
@@ -281,13 +281,13 @@ BOOST_AUTO_TEST_CASE(gamma_distribution_tests)
     for(unsigned int k = 0; k < N; k++){
         double val = gamma_u();
 #ifdef LIBKRCRAND_ENABLE_SSE2
-        BOOST_CHECK(fabs(val - gamma_sse2())/val < 1e-13);
+        BOOST_CHECK(fabs((val - gamma_sse2())/val) < 1e-15);
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX2
-        BOOST_CHECK(fabs(val - gamma_avx2())/val < 1e-13);
+        BOOST_CHECK(fabs((val - gamma_avx2())/val) < 1e-15);
 #endif
 #ifdef LIBKRCRAND_ENABLE_AVX512F
-        BOOST_CHECK(fabs(val - gamma_avx512())/val < 1e-13);
+        BOOST_CHECK(fabs((val - gamma_avx512())/val) < 1e-15);
 #endif
     }
 }
