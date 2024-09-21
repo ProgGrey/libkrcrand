@@ -82,8 +82,11 @@ int main()
     cout << gen.counter << endl;
     
     for(unsigned int j =10; j < 1000000; j++){
-        mx = std::max(mx,abs(gen2()-gen()));
+        double t = abs(gen2()-gen());
+        //cout << t << ' ';
+        mx = std::max(mx, t);
     }
+    cout << '\n';
     for(unsigned int j =0; j < 1; j++){
         for(unsigned int k =0; k < 10; k++){
             cout << gen2() << ", ";
@@ -94,6 +97,8 @@ int main()
     
     //cout << gen.counter << endl;
     cout << mx << endl;//*/
+
+    GammaDistributionSplited<Xoshiro256mm> sp_gen(3.6, 2);
     /*
     GammaDistributionSplited<Xoshiro256mm> gen2(nextafter(1,2), 1, inter);
     
